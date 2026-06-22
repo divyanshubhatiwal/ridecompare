@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="#0A0A0F"/>
+  <!-- Gradient overlay -->
+  <rect x="12" y="12" width="488" height="488" rx="100" fill="url(#g)"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <!-- Car body -->
+  <rect x="96" y="296" width="320" height="88" rx="22" fill="white"/>
+  <!-- Car roof -->
+  <path d="M156 296 L200 210 H312 L356 296Z" fill="white"/>
+  <!-- Windshields -->
+  <path d="M165 286 L203 222 H248 V286Z" fill="#6366F1" opacity="0.6"/>
+  <path d="M264 222 H308 L348 286 H264Z" fill="#6366F1" opacity="0.6"/>
+  <!-- Headlight divider -->
+  <rect x="248" y="222" width="16" height="64" fill="#6366F1" opacity="0.7"/>
+  <!-- Wheels -->
+  <circle cx="180" cy="384" r="44" fill="#0A0A0F"/>
+  <circle cx="180" cy="384" r="26" fill="#6366F1"/>
+  <circle cx="332" cy="384" r="44" fill="#0A0A0F"/>
+  <circle cx="332" cy="384" r="26" fill="#6366F1"/>
+  <!-- Front grille / bumper detail -->
+  <rect x="160" y="370" width="192" height="14" rx="7" fill="white" opacity="0.3"/>
+  <!-- RC text -->
+  <text x="256" y="176" text-anchor="middle" font-family="'Arial Black',Arial,sans-serif"
+    font-weight="900" font-size="52" fill="white" letter-spacing="-1" opacity="0.95">RC</text>
+</svg>

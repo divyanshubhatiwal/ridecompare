@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Environment — NEVER commit secrets
+.env
+.env.*
+!.env.example
+
+# SQLite dev database
+*.db
+*.sqlite3
+
+# Node
+node_modules/
+ridecompare/web/dist/
+ridecompare/web/dev-dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,10 @@
+@echo off
+set DEV_SQLITE=1
+set SECRET_KEY=dev_secret_key_not_for_production
+set ENVIRONMENT=development
+set DEBUG=true
+set POSTGRES_USER=dev
+set POSTGRES_PASSWORD=dev
+set POSTGRES_DB=dev
+set PYTHONIOENCODING=utf-8
+python dev_run.py
