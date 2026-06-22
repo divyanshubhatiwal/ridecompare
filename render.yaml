@@ -1,0 +1,57 @@
+databases:
+  - name: ridecompare-db
+    databaseName: ridecompare
+    user: ridecompare
+    plan: free
+
+services:
+  - type: web
+    name: ridecompare-api
+    plan: free
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: ridecompare-db
+          property: host
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: ridecompare-db
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: ridecompare-db
+          property: password
+      - key: POSTGRES_DB
+        fromDatabase:
+          name: ridecompare-db
+          property: database
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: ridecompare-db
+          property: port
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: EMAIL_FROM_NAME
+        value: RideCompare
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        value: "whatsapp:+14155238886"
