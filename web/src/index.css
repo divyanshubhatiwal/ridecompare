@@ -5,22 +5,25 @@
 /* ══════════════════════════════════════════
    THEME CSS VARIABLES
 ══════════════════════════════════════════ */
+/* Light theme is default (matches Namo Bharat style) */
 :root {
+  --c-bg:      240 244 248;
+  --c-surface: 255 255 255;
+  --c-card:    255 255 255;
+  --c-border:  220 228 236;
+  --c-muted:   100 116 139;
+  --primary: #0B8A82;
+  --accent:  #0A6B65;
+}
+
+[data-theme="dark"] {
   --c-bg:      10  10  15;
   --c-surface: 17  17  24;
   --c-card:    22  22  31;
   --c-border:  30  30  46;
   --c-muted:  107 114 128;
-  --primary: #6366F1;
-  --accent:  #8B5CF6;
-}
-
-[data-theme="light"] {
-  --c-bg:      248 250 252;
-  --c-surface: 241 245 249;
-  --c-card:    255 255 255;
-  --c-border:  226 232 240;
-  --c-muted:   100 116 139;
+  --primary: #0FA89F;
+  --accent:  #0B8A82;
 }
 
 /* ══════════════════════════════════════════
@@ -115,24 +118,31 @@
 
   body {
     @apply bg-bg font-sans;
-    color: #ffffff;
+    color: #1A1A2E;
     -webkit-font-smoothing: antialiased;
     scroll-behavior: smooth;
   }
 
-  /* Light-mode overrides */
-  [data-theme="light"] body                    { color: #1E293B; }
-  [data-theme="light"] .text-white             { color: #1E293B !important; }
-  [data-theme="light"] .text-white\/80         { color: rgba(30,41,59,0.8) !important; }
-  [data-theme="light"] .text-white\/60         { color: rgba(30,41,59,0.6) !important; }
-  [data-theme="light"] .hover\:text-white:hover{ color: #0F172A !important; }
-  [data-theme="light"] .bg-white\/5            { background-color: rgba(0,0,0,0.04) !important; }
-  [data-theme="light"] .bg-white\/10           { background-color: rgba(0,0,0,0.07) !important; }
-  [data-theme="light"] .hover\:bg-white\/5:hover  { background-color: rgba(0,0,0,0.04) !important; }
-  [data-theme="light"] .hover\:bg-white\/10:hover { background-color: rgba(0,0,0,0.07) !important; }
-  [data-theme="light"] .bg-bg\/95             { background-color: rgba(248,250,252,0.95) !important; }
-  [data-theme="light"] input,
-  [data-theme="light"] textarea               { color: #1E293B; }
+  /* Default (light) mode — text overrides */
+  .text-white             { color: #1A1A2E !important; }
+  .text-white\/80         { color: rgba(26,26,46,0.8) !important; }
+  .text-white\/60         { color: rgba(26,26,46,0.6) !important; }
+  .hover\:text-white:hover{ color: #0F172A !important; }
+  .bg-white\/5            { background-color: rgba(0,0,0,0.04) !important; }
+  .bg-white\/10           { background-color: rgba(0,0,0,0.07) !important; }
+  .hover\:bg-white\/5:hover  { background-color: rgba(0,0,0,0.04) !important; }
+  .hover\:bg-white\/10:hover { background-color: rgba(0,0,0,0.07) !important; }
+  input, textarea         { color: #1A1A2E; }
+
+  /* Dark mode overrides */
+  [data-theme="dark"] body        { color: #ffffff; }
+  [data-theme="dark"] .text-white { color: #ffffff !important; }
+  [data-theme="dark"] .text-white\/80 { color: rgba(255,255,255,0.8) !important; }
+  [data-theme="dark"] .text-white\/60 { color: rgba(255,255,255,0.6) !important; }
+  [data-theme="dark"] .hover\:text-white:hover { color: #ffffff !important; }
+  [data-theme="dark"] .bg-white\/5  { background-color: rgba(255,255,255,0.05) !important; }
+  [data-theme="dark"] .bg-white\/10 { background-color: rgba(255,255,255,0.10) !important; }
+  [data-theme="dark"] input, [data-theme="dark"] textarea { color: #ffffff; }
 
   ::-webkit-scrollbar       { width: 4px; }
   ::-webkit-scrollbar-track { @apply bg-surface; }
@@ -154,7 +164,7 @@
     transition: background-color 0.2s, transform 0.15s, box-shadow 0.2s;
   }
   .btn-primary:hover:not(:disabled) {
-    background-color: #5355d6;
+    background-color: #097870;
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba(99,102,241,0.4);
   }

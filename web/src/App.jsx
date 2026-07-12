@@ -21,6 +21,7 @@ import MapRoutePage from './pages/MapRoutePage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import CalculatorPage from './pages/CalculatorPage'
 import AdminPage from './pages/AdminPage'
+import ExplorePage from './pages/ExplorePage'
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
               <Route path="/home"      element={<HomePage />} />
               <Route path="/history"   element={<HistoryPage />} />
               <Route path="/alerts"    element={<AlertsPage />} />
+              <Route path="/explore"   element={<ExplorePage />} />
               <Route path="/places"    element={<SavedPlacesPage />} />
               <Route path="/profile"   element={<ProfilePage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />

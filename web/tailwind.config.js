@@ -11,8 +11,9 @@ export default {
         border:  'rgb(var(--c-border)  / <alpha-value>)',
         muted:   'rgb(var(--c-muted)   / <alpha-value>)',
         // Fixed accent colours
-        primary:   '#6366F1',
-        accent:    '#8B5CF6',
+        primary:   '#0B8A82',
+        accent:    '#0A6B65',
+        cta:       '#E53935',
         surge:     '#F43F5E',
         cheapest:  '#10B981',
         fastest:   '#3B82F6',
