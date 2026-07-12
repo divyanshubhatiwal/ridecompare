@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 const ThemeContext = createContext({ theme: 'dark', toggle: () => {} })
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem('rc_theme') || 'dark')
+  const [theme, setTheme] = useState(() => localStorage.getItem('rc_theme') || 'light')
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)

@@ -38,7 +38,8 @@ function LocationInput({ icon: Icon, iconColor, placeholder, value, onChange, on
       <div className="flex items-center gap-3 py-3">
         <Icon size={18} className={iconColor} />
         <input
-          className="flex-1 bg-transparent text-sm text-white placeholder-muted outline-none"
+          className="flex-1 bg-transparent text-sm placeholder-muted outline-none"
+          style={{ color: 'inherit' }}
           placeholder={placeholder}
           value={query}
           onChange={handleChange}
@@ -54,7 +55,7 @@ function LocationInput({ icon: Icon, iconColor, placeholder, value, onChange, on
               onMouseDown={() => select(s)}
               className="w-full text-left px-4 py-3 hover:bg-surface transition-colors border-b border-border last:border-0"
             >
-              <p className="text-sm font-medium text-white">{s.main_text}</p>
+              <p className="text-sm font-medium" style={{ color: 'inherit' }}>{s.main_text}</p>
               <p className="text-xs text-muted mt-0.5">{s.secondary_text}</p>
             </button>
           ))}
@@ -94,7 +95,7 @@ export default function RouteSelector({ onSearch, prefill }) {
   }
 
   return (
-    <div className="card">
+    <div className="divide-y divide-border">
       <LocationInput
         icon={Navigation}
         iconColor="text-primary"

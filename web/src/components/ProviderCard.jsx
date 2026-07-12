@@ -30,8 +30,8 @@ export default function ProviderCard({ estimate, onClick, co2g, dealPct, route }
       style={{ transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease' }}
       onMouseEnter={e => {
         e.currentTarget.style.transform   = 'translateY(-2px)'
-        e.currentTarget.style.boxShadow   = '0 8px 28px rgba(0,0,0,0.25), 0 0 0 1px rgba(99,102,241,0.18)'
-        e.currentTarget.style.borderColor = 'rgba(99,102,241,0.35)'
+        e.currentTarget.style.boxShadow   = '0 8px 28px rgba(0,0,0,0.12), 0 0 0 1px rgba(15,118,110,0.2)'
+        e.currentTarget.style.borderColor = 'rgba(15,118,110,0.35)'
       }}
       onMouseLeave={e => {
         e.currentTarget.style.transform   = 'translateY(0)'
@@ -112,22 +112,22 @@ export default function ProviderCard({ estimate, onClick, co2g, dealPct, route }
         onClick={handleBook}
         className="ripple-btn mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold"
         style={{
-          background:  booked ? 'rgba(16,185,129,0.1)'  : 'rgba(99,102,241,0.1)',
-          borderColor: booked ? 'rgba(16,185,129,0.3)'  : 'rgba(99,102,241,0.2)',
-          color:       booked ? '#10B981'               : '#6366F1',
+          background:  booked ? 'rgba(16,185,129,0.08)' : 'rgba(15,118,110,0.08)',
+          borderColor: booked ? 'rgba(16,185,129,0.3)'  : 'rgba(15,118,110,0.25)',
+          color:       booked ? '#10B981'               : '#0F766E',
           transition:  'background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s',
           overflow:    'hidden',
           position:    'relative',
         }}
         onMouseEnter={e => {
           if (!booked) {
-            e.currentTarget.style.background = 'rgba(99,102,241,0.2)'
+            e.currentTarget.style.background = 'rgba(15,118,110,0.15)'
             e.currentTarget.style.transform  = 'translateY(-1px)'
-            e.currentTarget.style.boxShadow  = '0 4px 12px rgba(99,102,241,0.2)'
+            e.currentTarget.style.boxShadow  = '0 4px 12px rgba(15,118,110,0.2)'
           }
         }}
         onMouseLeave={e => {
-          e.currentTarget.style.background = booked ? 'rgba(16,185,129,0.1)' : 'rgba(99,102,241,0.1)'
+          e.currentTarget.style.background = booked ? 'rgba(16,185,129,0.08)' : 'rgba(15,118,110,0.08)'
           e.currentTarget.style.transform  = 'translateY(0)'
           e.currentTarget.style.boxShadow  = 'none'
         }}
