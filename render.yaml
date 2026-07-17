@@ -1,9 +1,3 @@
-databases:
-  - name: ridecompare-db
-    databaseName: ridecompare
-    user: ridecompare
-    plan: free
-
 services:
   # ── Backend API ───────────────────────────────────────────────────
   - type: web
@@ -14,26 +8,8 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: POSTGRES_HOST
-        fromDatabase:
-          name: ridecompare-db
-          property: host
-      - key: POSTGRES_USER
-        fromDatabase:
-          name: ridecompare-db
-          property: user
-      - key: POSTGRES_PASSWORD
-        fromDatabase:
-          name: ridecompare-db
-          property: password
-      - key: POSTGRES_DB
-        fromDatabase:
-          name: ridecompare-db
-          property: database
-      - key: POSTGRES_PORT
-        fromDatabase:
-          name: ridecompare-db
-          property: port
+      - key: DATABASE_URL
+        sync: false
       - key: SECRET_KEY
         generateValue: true
       - key: ENVIRONMENT

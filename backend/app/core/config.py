@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from pydantic import AnyHttpUrl, field_validator
+from pydantic import AnyHttpUrl, Field, field_validator
 from typing import List, Optional
 import secrets
 
@@ -23,8 +23,16 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
 
+    DATABASE_URL_OVERRIDE: Optional[str] = Field(default=None, alias="DATABASE_URL")
+
     @property
     def DATABASE_URL(self) -> str:
+        if self.DATABASE_URL_OVERRIDE:
+            url = self.DATABASE_URL_OVERRIDE
+            # Render/Supabase give postgres:// — psycopg2 needs postgresql://
+            return url.replace("postgres://", "postgresql+psycopg2://", 1) \
+                       .replace("postgresql://", "postgresql+psycopg2://", 1) \
+                       if "+psycopg2" not in url else url
         return (
             f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
@@ -98,6 +106,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        populate_by_name = True
 
 
 settings = Settings()
