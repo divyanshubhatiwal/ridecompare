@@ -22,6 +22,8 @@ import AnalyticsPage from './pages/AnalyticsPage'
 import CalculatorPage from './pages/CalculatorPage'
 import AdminPage from './pages/AdminPage'
 import ExplorePage from './pages/ExplorePage'
+import FeatureDemoPage from './pages/FeatureDemoPage'
+import SafetyPage from './pages/SafetyPage'
 
 export default function App() {
   return (
@@ -35,6 +37,7 @@ export default function App() {
             <Route path="/login"            element={<LoginPage />} />
             <Route path="/register"         element={<RegisterPage />} />
             <Route path="/forgot-password"  element={<ForgotPasswordPage />} />
+            <Route path="/demo"             element={<FeatureDemoPage />} />
             <Route path="/"         element={<Navigate to="/home" replace />} />
 
             {/* Protected routes with bottom nav shell */}
@@ -47,6 +50,7 @@ export default function App() {
               <Route path="/profile"   element={<ProfilePage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/admin"     element={<AdminPage />} />
+              <Route path="/safety"    element={<SafetyPage />} />
             </Route>
 
             {/* Protected full-screen routes (no bottom nav) */}

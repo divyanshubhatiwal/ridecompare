@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Eye, EyeOff, ArrowRight } from 'lucide-react'
+import LoginSplash from '../components/LoginSplash'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -11,13 +12,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [unverifiedEmail, setUnverifiedEmail] = useState('')
+  const [splashName, setSplashName] = useState(null) // null = hidden
 
   const handleSubmit = async e => {
     e.preventDefault()
     setLoading(true); setError(''); setUnverifiedEmail('')
     try {
-      await login(form.email, form.password)
-      navigate('/home')
+      const u = await login(form.email, form.password)
+      setSplashName(u?.full_name?.split(' ')[0] || 'there')
     } catch (err) {
       const detail = err.response?.data?.detail || 'Login failed'
       if (detail === 'EMAIL_NOT_VERIFIED') {
@@ -32,6 +34,10 @@ export default function LoginPage() {
   }
 
   return (
+    <>
+    {splashName !== null && (
+      <LoginSplash name={splashName} onDone={() => navigate('/home')} />
+    )}
     <div className="min-h-screen flex items-center justify-center p-6 max-w-md mx-auto">
       <div className="w-full">
         {/* Logo */}
@@ -112,5 +118,6 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+    </>
   )
 }

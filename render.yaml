@@ -5,6 +5,7 @@ databases:
     plan: free
 
 services:
+  # ── Backend API ───────────────────────────────────────────────────
   - type: web
     name: ridecompare-api
     plan: free
@@ -49,9 +50,29 @@ services:
         sync: false
       - key: SMTP_PASS
         sync: false
-      - key: TWILIO_ACCOUNT_SID
+      - key: ULTRAMSG_INSTANCE_ID
         sync: false
-      - key: TWILIO_AUTH_TOKEN
+      - key: ULTRAMSG_TOKEN
         sync: false
-      - key: TWILIO_WHATSAPP_FROM
-        value: "whatsapp:+14155238886"
+      - key: BLAND_AI_API_KEY
+        sync: false
+
+  # ── Frontend (static site) ────────────────────────────────────────
+  - type: web
+    name: ridecompare-web
+    plan: free
+    runtime: static
+    rootDir: web
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://ridecompare-api.onrender.com/api/v1
+      - key: VITE_OPENCAGE_KEY
+        sync: false
+      - key: VITE_DEV_PIN
+        value: "9999"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

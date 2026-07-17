@@ -3,33 +3,49 @@
 @tailwind utilities;
 
 /* ══════════════════════════════════════════
-   DESIGN TOKENS — light default
+   DESIGN TOKENS — Apple light
 ══════════════════════════════════════════ */
 :root {
-  --c-bg:      248 250 252;
+  --c-bg:      255 255 255;
   --c-surface: 255 255 255;
   --c-card:    255 255 255;
-  --c-border:  226 232 240;
-  --c-muted:   100 116 139;
-  --primary:   #0F766E;
-  --accent:    #0D9488;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.05);
-  --shadow-lg: 0 10px 40px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.06);
-  --radius:    12px;
+  --c-border:  230 230 235;
+  --c-muted:   110 110 115;
+  --primary:   #0071E3;
+  --accent:    #0077ED;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06);
+  --radius:    18px;
+  --radius-sm: 12px;
+  --radius-pill: 980px;
+  /* Frosted-glass surfaces — light */
+  --frosted-nav:    rgba(255,255,255,0.85);
+  --frosted-bar:    rgba(255,255,255,0.90);
+  --frosted-menu:   rgba(255,255,255,0.97);
+  --text-primary:   #1D1D1F;
+  --text-secondary: #6E6E73;
+  --hero-bg:        #F5F5F7;
 }
 
 [data-theme="dark"] {
-  --c-bg:      10  14  24;
-  --c-surface: 17  24  39;
-  --c-card:    21  30  48;
-  --c-border:  36  48  70;
-  --c-muted:  100 116 138;
-  --primary:   #14B8A6;
-  --accent:    #0D9488;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.45);
-  --shadow-lg: 0 10px 40px rgba(0,0,0,0.55);
+  --c-bg:      0   0   0;
+  --c-surface: 28  28  30;
+  --c-card:    44  44  46;
+  --c-border:  58  58  60;
+  --c-muted:   142 142 147;
+  --primary:   #0A84FF;
+  --accent:    #409CFF;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.55);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.65);
+  /* Frosted-glass surfaces — dark */
+  --frosted-nav:    rgba(28,28,30,0.85);
+  --frosted-bar:    rgba(28,28,30,0.92);
+  --frosted-menu:   rgba(28,28,30,0.97);
+  --text-primary:   #F5F5F7;
+  --text-secondary: #8E8E93;
+  --hero-bg:        #1C1C1E;
 }
 
 /* ══════════════════════════════════════════
@@ -80,32 +96,23 @@
 
   body {
     @apply bg-bg font-sans;
-    color: #0F172A;
+    color: #1D1D1F;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
-  [data-theme="dark"] body { color: #F1F5F9; }
+  [data-theme="dark"] body { color: #F5F5F7; }
 
-  /* Global text colour helpers adapt to theme */
-  .text-white             { color: #0F172A !important; }
-  .text-white\/80         { color: rgba(15,23,42,.8) !important; }
-  .text-white\/60         { color: rgba(15,23,42,.6) !important; }
-  .hover\:text-white:hover{ color: #0F172A !important; }
-  .bg-white\/5            { background-color: rgba(0,0,0,.04) !important; }
-  .bg-white\/10           { background-color: rgba(0,0,0,.07) !important; }
-  .hover\:bg-white\/5:hover  { background-color: rgba(0,0,0,.04) !important; }
-  .hover\:bg-white\/10:hover { background-color: rgba(0,0,0,.07) !important; }
-  input, textarea         { color: #0F172A; }
+  h1, h2, h3, h4 { letter-spacing: -0.025em; line-height: 1.1; }
 
-  [data-theme="dark"] .text-white               { color: #F1F5F9 !important; }
-  [data-theme="dark"] .text-white\/80           { color: rgba(241,245,249,.8) !important; }
-  [data-theme="dark"] .text-white\/60           { color: rgba(241,245,249,.6) !important; }
-  [data-theme="dark"] .hover\:text-white:hover  { color: #F1F5F9 !important; }
-  [data-theme="dark"] .bg-white\/5              { background-color: rgba(255,255,255,.05) !important; }
-  [data-theme="dark"] .bg-white\/10             { background-color: rgba(255,255,255,.10) !important; }
-  [data-theme="dark"] .hover\:bg-white\/5:hover { background-color: rgba(255,255,255,.05) !important; }
-  [data-theme="dark"] input, [data-theme="dark"] textarea { color: #F1F5F9; }
+  ::selection { background: rgba(0,113,227,0.18); color: #0071E3; }
+
+  input, textarea { color: #1D1D1F; }
+  [data-theme="dark"] input,
+  [data-theme="dark"] textarea { color: #F5F5F7; }
 
   ::-webkit-scrollbar       { width: 4px; }
   ::-webkit-scrollbar-track { @apply bg-bg; }
@@ -117,63 +124,69 @@
 ══════════════════════════════════════════ */
 @layer components {
 
-  /* ── Primary button ── */
+  /* ── Primary button — Apple pill ── */
   .btn-primary {
-    @apply w-full font-semibold py-3 px-6 rounded-xl text-white
-           disabled:opacity-50 disabled:cursor-not-allowed
+    @apply w-full font-medium py-3 px-6 text-white
+           disabled:opacity-40 disabled:cursor-not-allowed
            flex items-center justify-center gap-2;
     background: var(--primary);
-    box-shadow: 0 2px 8px rgba(15,118,110,.35);
-    position: relative;
-    overflow: hidden;
-    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    border-radius: var(--radius-pill);
+    font-size: 15px;
+    transition: background 0.2s ease, transform 0.15s ease;
   }
-  .btn-primary:hover:not(:disabled) {
-    background: var(--accent);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(15,118,110,.45);
-  }
-  .btn-primary:active:not(:disabled) { transform: translateY(0) scale(0.98); }
-  [data-theme="dark"] .btn-primary { color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--accent); transform: scale(1.01); }
+  .btn-primary:active:not(:disabled) { transform: scale(0.98); }
 
   /* ── Outline button ── */
   .btn-outline {
-    @apply w-full border border-border font-medium py-3 px-6 rounded-xl
-           flex items-center justify-center gap-2 text-sm;
-    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    @apply w-full font-medium py-3 px-6
+           flex items-center justify-center gap-2;
+    border-radius: var(--radius-pill);
+    font-size: 15px;
+    border: 1.5px solid var(--primary);
     color: var(--primary);
+    transition: background 0.2s ease, transform 0.15s ease;
   }
-  .btn-outline:hover {
-    background: rgba(15,118,110,.06);
-    border-color: var(--primary);
-    transform: translateY(-1px);
-  }
+  .btn-outline:hover { background: rgba(0,113,227,0.06); transform: scale(1.01); }
 
   /* ── Card ── */
   .card {
-    @apply bg-card border border-border rounded-2xl p-4;
+    background: var(--c-card);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid rgba(0,0,0,0.08);
     box-shadow: var(--shadow-sm);
   }
+  [data-theme="dark"] .card { border-color: rgba(255,255,255,0.07); }
+
   .card-lift {
     @apply card;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease;
   }
   .card-lift:hover {
-    transform: translateY(-3px);
+    transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
-    border-color: rgba(15,118,110,.25);
   }
+
+  /* ── Alt section bg ── */
+  .bg-alt { background: #F5F5F7; }
+  [data-theme="dark"] .bg-alt { background: #1C1C1E; }
 
   /* ── Input ── */
   .input {
-    @apply w-full bg-surface border border-border rounded-xl px-4 py-3
-           placeholder-muted focus:outline-none transition-all text-sm;
-    box-shadow: var(--shadow-sm);
+    @apply w-full bg-surface border focus:outline-none transition-all text-sm;
+    border-color: rgba(0,0,0,0.1);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    background: #F5F5F7;
   }
   .input:focus {
+    background: #fff;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(15,118,110,.12), var(--shadow-sm);
+    box-shadow: 0 0 0 3px rgba(0,113,227,0.12);
   }
+  [data-theme="dark"] .input { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.1); }
+  [data-theme="dark"] .input:focus { background: rgba(255,255,255,0.12); }
 
   /* ── Badges ── */
   .badge-cheapest  { @apply text-cheapest  bg-cheapest/10  border border-cheapest/20  text-xs font-bold px-2 py-0.5 rounded-md; animation: badge-pop .35s cubic-bezier(.34,1.56,.64,1) both; }

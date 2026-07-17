@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { MapPin, Navigation, ArrowDown } from 'lucide-react'
+import { MapPin, Navigation, ArrowDown, LocateFixed, Loader } from 'lucide-react'
 import { placesApi } from '../api/places'
 
 function LocationInput({ icon: Icon, iconColor, placeholder, value, onChange, onSelect }) {
@@ -68,12 +68,55 @@ function LocationInput({ icon: Icon, iconColor, placeholder, value, onChange, on
 export default function RouteSelector({ onSearch, prefill }) {
   const [pickup, setPickup] = useState({ address: '', lat: null, lng: null })
   const [destination, setDestination] = useState({ address: '', lat: null, lng: null })
+  const [locating, setLocating] = useState(false)
 
   // When voice search result comes in, use as destination prefill
   useEffect(() => {
     if (prefill) setDestination({ address: prefill, lat: null, lng: null })
   }, [prefill])
   const [loading, setLoading] = useState(false)
+
+  const useMyLocation = () => {
+    if (!navigator.geolocation) return
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        const { latitude: lat, longitude: lng } = coords
+        try {
+          const r = await fetch(
+            `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${import.meta.env.VITE_OPENCAGE_KEY}&language=en&no_annotations=1&limit=1`
+          )
+          const d = await r.json()
+          const result = d.results?.[0]
+          let address
+          if (result) {
+            const c = result.components || {}
+            const rawRoad = c.road || c.path || c.footway || c.pedestrian || c.croft
+            const road    = rawRoad && !/^unnamed/i.test(rawRoad) ? rawRoad : null
+            const street  = [c.house_number, road].filter(Boolean).join(' ')
+            const village = c.village || c.hamlet
+            const area    = c.neighbourhood || c.suburb || c.quarter || c.city_district
+            const city    = c.city || c.town || c.municipality || c.county
+            const parts   = []
+            if (street)                             parts.push(street)
+            else if (village)                       parts.push(village)
+            if (area && area !== village)           parts.push(area)
+            if (city && !parts.includes(city))      parts.push(city)
+            address = parts.length >= 2
+              ? parts.join(', ')
+              : result.formatted?.split(',').slice(0, 4).join(',').trim()
+          }
+          setPickup({ address: address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`, lat, lng })
+        } catch {
+          setPickup({ address: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, lat, lng })
+        } finally {
+          setLocating(false)
+        }
+      },
+      () => setLocating(false),
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    )
+  }
 
   const canSearch = pickup.address.length > 2 && destination.address.length > 2
 
@@ -96,14 +139,33 @@ export default function RouteSelector({ onSearch, prefill }) {
 
   return (
     <div className="divide-y divide-border">
-      <LocationInput
-        icon={Navigation}
-        iconColor="text-primary"
-        placeholder="Where are you?"
-        value={pickup.address}
-        onChange={setPickup}
-        onSelect={setPickup}
-      />
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <LocationInput
+            icon={Navigation}
+            iconColor="text-primary"
+            placeholder="Where are you?"
+            value={pickup.address}
+            onChange={setPickup}
+            onSelect={setPickup}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={useMyLocation}
+          disabled={locating}
+          title="Use my current location"
+          style={{
+            flexShrink: 0, width: 36, height: 36,
+            borderRadius: 10, border: '1px solid rgba(0,113,227,0.25)',
+            background: 'rgba(0,113,227,0.08)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--primary)', cursor: locating ? 'wait' : 'pointer',
+          }}
+        >
+          {locating ? <Loader size={15} style={{ animation: 'spin-full 0.8s linear infinite' }} /> : <LocateFixed size={15} />}
+        </button>
+      </div>
       <div className="flex items-center gap-3 py-0.5">
         <div className="w-[18px] flex justify-center">
           <div className="w-0.5 h-5 bg-border rounded" />

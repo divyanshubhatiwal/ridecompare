@@ -1,165 +1,183 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import {
-  Home, History, Bell, MapPin, User, Grid,
-  BarChart2, Calculator, ShieldCheck, Zap, Menu, X
-} from 'lucide-react'
-import { useState } from 'react'
+import { Home, History, Bell, User, Grid, Zap, Menu, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import ThemeToggle from './ThemeToggle'
 import { useAuth } from '../context/AuthContext'
 
 const NAV_LINKS = [
-  { to: '/home',      label: 'Home'       },
-  { to: '/compare',   label: 'Compare'    },
-  { to: '/history',   label: 'History'    },
-  { to: '/alerts',    label: 'Alerts'     },
-  { to: '/analytics', label: 'Analytics'  },
+  { to: '/home',      label: 'Home'      },
+  { to: '/compare',   label: 'Compare'   },
+  { to: '/history',   label: 'History'   },
+  { to: '/alerts',    label: 'Alerts'    },
+  { to: '/analytics', label: 'Analytics' },
 ]
 
 const BOTTOM_NAV = [
-  { to: '/home',    icon: Home,    label: 'Home'     },
-  { to: '/history', icon: History, label: 'History'  },
+  { to: '/home',    icon: Home,    label: 'Home'    },
+  { to: '/history', icon: History, label: 'History' },
   null,
-  { to: '/explore', icon: Grid,    label: 'Explore'  },
-  { to: '/profile', icon: User,    label: 'Account'  },
+  { to: '/explore', icon: Grid,    label: 'Explore' },
+  { to: '/profile', icon: User,    label: 'Account' },
 ]
 
 export default function Layout() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [menuOpen,  setMenuOpen]  = useState(false)
+  const [scrolled,  setScrolled]  = useState(false)
+  const [avatar,    setAvatar]    = useState(() => localStorage.getItem('rc_avatar') || '')
   const initial = user?.full_name?.[0]?.toUpperCase() || 'U'
+
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 8)
+    window.addEventListener('scroll', fn, { passive: true })
+    return () => window.removeEventListener('scroll', fn)
+  }, [])
+
+  useEffect(() => {
+    const fn = (e) => setAvatar(e.detail || '')
+    window.addEventListener('rc-avatar-change', fn)
+    return () => window.removeEventListener('rc-avatar-change', fn)
+  }, [])
 
   return (
     <div className="flex flex-col min-h-screen bg-bg">
 
-      {/* ══ TOP NAV BAR (desktop + mobile header) ══ */}
-      <header className="sticky top-0 z-40 bg-surface border-b border-border"
-        style={{ boxShadow: '0 1px 0 rgba(0,0,0,0.06)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+      {/* ── TOP NAV — Apple frosted glass ── */}
+      <header
+        className="sticky top-0 z-40 transition-all duration-300"
+        style={{
+          background:       scrolled ? 'var(--frosted-nav)' : 'transparent',
+          backdropFilter:   scrolled ? 'saturate(180%) blur(20px)' : 'none',
+          WebkitBackdropFilter: scrolled ? 'saturate(180%) blur(20px)' : 'none',
+          borderBottom:     scrolled ? '1px solid rgba(128,128,128,0.15)' : '1px solid transparent',
+        }}
+      >
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+          <div className="flex items-center justify-between h-14 gap-6">
 
             {/* Logo */}
-            <button onClick={() => navigate('/home')}
-              className="flex items-center gap-2.5 shrink-0">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg,#0F766E,#0D9488)' }}>
-                <Zap size={16} className="text-white" />
+            <button onClick={() => navigate('/home')} className="shrink-0 flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                style={{ background: 'var(--primary)' }}>
+                <Zap size={14} className="text-white" />
               </div>
-              <span className="font-bold text-[15px] tracking-tight" style={{ color: '#0F172A' }}>
+              <span className="font-semibold text-[17px] tracking-tight" style={{ color: 'var(--text-primary)' }}>
                 Ride<span style={{ color: 'var(--primary)' }}>Compare</span>
               </span>
             </button>
 
-            {/* Desktop nav links */}
-            <nav className="hidden md:flex items-center gap-1">
+            {/* Desktop nav */}
+            <nav className="hidden md:flex items-center gap-0.5 flex-1 justify-center">
               {NAV_LINKS.map(({ to, label }) => (
                 <NavLink key={to} to={to}
                   className={({ isActive }) =>
-                    `px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      isActive
-                        ? 'text-white font-semibold'
-                        : 'text-muted hover:text-[#0F172A]'
+                    `px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors duration-150 ${
+                      isActive ? 'bg-black/[0.06] dark:bg-white/[0.08]' : ''
                     }`}
-                  style={({ isActive }) => isActive
-                    ? { background: 'var(--primary)', color: '#fff' }
-                    : {}}
+                  style={({ isActive }) => ({
+                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  })}
                 >
                   {label}
                 </NavLink>
               ))}
             </nav>
 
-            {/* Right side */}
+            {/* Right */}
             <div className="flex items-center gap-2">
               <ThemeToggle />
 
-              {/* Desktop: profile + CTA */}
               <button
                 onClick={() => navigate('/compare')}
-                className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
-                style={{ background: 'var(--primary)', boxShadow: '0 2px 8px rgba(15,118,110,.35)' }}
+                className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 text-white text-[13px] font-medium transition-all"
+                style={{ background: 'var(--primary)', borderRadius: '980px' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--accent)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'var(--primary)'}
               >
-                <Zap size={14} /> Compare Now
+                <Zap size={13} /> Compare
               </button>
 
               <button onClick={() => navigate('/profile')}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                style={{ background: 'var(--primary)' }}>
-                {initial}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden"
+                style={{ background: avatar ? 'transparent' : 'var(--primary)', border: avatar ? '2px solid var(--primary)' : 'none' }}>
+                {avatar
+                  ? <img src={avatar} alt="avatar" className="w-full h-full object-cover" />
+                  : initial}
               </button>
 
-              {/* Mobile hamburger */}
-              <button onClick={() => setMobileMenuOpen(o => !o)}
-                className="md:hidden p-2 rounded-lg text-muted hover:text-[#0F172A] transition-colors">
-                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              <button onClick={() => setMenuOpen(o => !o)}
+                className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg text-[#6E6E73] hover:text-[#1D1D1F] transition-colors"
+                style={{ background: 'rgba(0,0,0,0.04)' }}>
+                {menuOpen ? <X size={17} /> : <Menu size={17} />}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile dropdown menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-surface border-t border-border px-4 py-3 space-y-1">
+        {/* Mobile dropdown */}
+        {menuOpen && (
+          <div className="md:hidden px-5 py-3 space-y-1"
+            style={{ background: 'var(--frosted-menu)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(128,128,128,0.12)' }}>
             {NAV_LINKS.map(({ to, label }) => (
-              <NavLink key={to} to={to}
-                onClick={() => setMobileMenuOpen(false)}
+              <NavLink key={to} to={to} onClick={() => setMenuOpen(false)}
                 className={({ isActive }) =>
-                  `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive ? 'text-white' : 'text-muted'
+                  `block px-4 py-3 text-[15px] font-medium rounded-xl transition-colors ${
+                    isActive ? 'bg-blue-50/80 dark:bg-blue-900/30' : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06]'
                   }`}
-                style={({ isActive }) => isActive ? { background: 'var(--primary)' } : {}}
+                style={({ isActive }) => ({ color: isActive ? 'var(--primary)' : 'var(--text-primary)' })}
               >
                 {label}
               </NavLink>
             ))}
-            <button
-              onClick={() => { navigate('/places'); setMobileMenuOpen(false) }}
-              className="block w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-muted"
-            >
-              Saved Places
-            </button>
+            <div className="pt-2">
+              <button onClick={() => { navigate('/compare'); setMenuOpen(false) }}
+                className="btn-primary w-full">
+                Compare Now
+              </button>
+            </div>
           </div>
         )}
       </header>
 
-      {/* ══ PAGE CONTENT ══ */}
-      <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
-        <div className="max-w-5xl mx-auto w-full md:py-6 md:px-6">
-          <Outlet />
-        </div>
+      {/* ── PAGE CONTENT ── */}
+      <main className="flex-1 overflow-y-auto pb-24 md:pb-8">
+        <Outlet />
       </main>
 
-      {/* ══ MOBILE BOTTOM NAV ══ */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-surface border-t border-border"
-        style={{ boxShadow: '0 -2px 16px rgba(0,0,0,0.07)' }}>
-        <div className="flex items-end max-w-md mx-auto px-2">
+      {/* ── MOBILE BOTTOM NAV — Apple tab bar ── */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40"
+        style={{
+          background: 'var(--frosted-bar)',
+          backdropFilter: 'saturate(180%) blur(20px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+          borderTop: '1px solid rgba(128,128,128,0.15)',
+        }}>
+        <div className="flex items-end max-w-md mx-auto px-2 pb-safe">
           {BOTTOM_NAV.map((item, i) => {
             if (!item) return (
-              <div key="cta" className="flex-1 flex justify-center">
+              <div key="cta" className="flex-1 flex justify-center items-center py-2">
                 <button
                   onClick={() => navigate('/compare')}
-                  className="w-13 h-13 rounded-full flex items-center justify-center -mt-5 active:scale-95 transition-transform text-white"
-                  style={{
-                    width: 52, height: 52,
-                    background: 'linear-gradient(135deg,#0F766E,#0D9488)',
-                    boxShadow: '0 4px 16px rgba(15,118,110,.45)',
-                  }}
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-white active:scale-95 transition-transform"
+                  style={{ background: 'var(--primary)', boxShadow: '0 4px 14px rgba(0,113,227,0.4)' }}
                 >
-                  <Zap size={24} className="text-white" />
+                  <Zap size={22} />
                 </button>
               </div>
             )
             const { to, icon: Icon, label } = item
             return (
               <NavLink key={to} to={to}
-                className={({ isActive }) =>
-                  `flex-1 flex flex-col items-center py-2.5 gap-0.5 transition-colors text-[10px] font-medium ${
-                    isActive ? '' : 'text-muted'
-                  }`}
-                style={({ isActive }) => isActive ? { color: 'var(--primary)' } : {}}
+                className="flex-1 flex flex-col items-center py-2.5 gap-0.5 text-[10px] font-medium transition-colors"
+                style={({ isActive }) => ({ color: isActive ? 'var(--primary)' : '#8E8E93' })}
               >
-                <Icon size={20} />
-                <span>{label}</span>
+                {({ isActive }) => (
+                  <>
+                    <Icon size={22} strokeWidth={isActive ? 2 : 1.5} />
+                    <span>{label}</span>
+                  </>
+                )}
               </NavLink>
             )
           })}

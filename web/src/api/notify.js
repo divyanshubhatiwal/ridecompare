@@ -25,4 +25,13 @@ export const notifyApi = {
 
   sendTest: () =>
     client.post('/notify/whatsapp/test').then(r => r.data),
+
+  sendSOS: (ec_phone, ec_name) =>
+    client.post('/notify/whatsapp/sos', { ec_phone, ec_name }).then(r => r.data),
+
+  callSOS: (ec_phone, ec_name) =>
+    client.post('/notify/voice/sos', { ec_phone, ec_name }).then(r => r.data),
+
+  smsSOS: (ec_phone, ec_name) =>
+    client.post('/notify/sms/sos', { ec_phone, ec_name }).then(r => r.data),
 }

@@ -1,33 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, RotateCcw, Share2, Bell, BellOff, Zap, RefreshCw, MessageCircle, X } from 'lucide-react'
+import { ArrowLeft, RotateCcw, Share2, Bell, BellOff, Zap, RefreshCw, X, Search } from 'lucide-react'
+import RouteSelector from '../components/RouteSelector'
 import { ridesApi } from '../api/rides'
 import ProviderCard from '../components/ProviderCard'
 import ShareSheet from '../components/ShareSheet'
 import { PageSpinner } from '../components/Spinner'
 import useRipple from '../hooks/useRipple'
-import { useWhatsApp } from '../hooks/useWhatsApp'
-import { notifyApi } from '../api/notify'
-
-function buildWhatsAppMessage(route, sorted) {
-  const cheapest  = sorted[0]
-  const bestValue = sorted.find(r => r.badges?.includes('best_value')) || sorted[Math.floor(sorted.length / 2)]
-  return [
-    '🚕 *RideCompare Update*',
-    `📍 ${route?.pickupAddress || 'Pickup'} → ${route?.destinationAddress || 'Destination'}`,
-    '',
-    cheapest  ? `💸 *Cheapest:* ${cheapest.provider_display_name} — *${cheapest.fare_display}* (${cheapest.eta_minutes} min ETA)` : '',
-    bestValue && bestValue !== cheapest
-      ? `⭐ *Best Value:* ${bestValue.provider_display_name} — *${bestValue.fare_display}* (${bestValue.eta_minutes} min ETA)`
-      : '',
-    '',
-    '*All options:*',
-    ...sorted.map((r, i) => `  ${i + 1}. ${r.provider_display_name}: ${r.fare_display} (${r.eta_minutes} min)`),
-    '',
-    `🔁 Auto-refreshed • ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`,
-    '_via RideCompare_',
-  ].filter(Boolean).join('\n')
-}
+import PriceDropToast from '../components/PriceDropToast'
+import SurgeRadar from '../components/SurgeRadar'
+import PriceHeatmap from '../components/PriceHeatmap'
 
 const SORT_OPTIONS = [
   { value: 'cheapest', label: '💸 Cheapest' },
@@ -67,21 +49,39 @@ function useFarePrediction() {
   return                               { level: 'low',  icon: '✅', msg: 'Good time to book!',              tip: 'Prices are typically lower right now' }
 }
 
-function SkeletonCard() {
+// Live-pulse skeleton — breathes while fares are loading
+function PulseCard({ index }) {
   return (
-    <div className="card mb-3">
+    <div className="card mb-3" style={{
+      animation: `fare-breathe 1.8s ${index * 0.18}s ease-in-out infinite`,
+    }}>
       <div className="flex gap-3">
         <div className="skeleton w-12 h-12 rounded-xl" />
         <div className="flex-1 space-y-2">
           <div className="skeleton h-4 w-1/2" />
           <div className="skeleton h-3 w-1/3" />
         </div>
-        <div className="space-y-1">
-          <div className="skeleton h-5 w-16" />
+        <div className="space-y-1 flex flex-col items-end">
+          <div style={{
+            width: 60, height: 22, borderRadius: 8,
+            background: 'linear-gradient(90deg,rgba(0,113,227,0.12),rgba(0,113,227,0.22),rgba(0,113,227,0.12))',
+            backgroundSize: '200% 100%',
+            animation: 'fare-shimmer 1.4s ease-in-out infinite',
+          }} />
           <div className="skeleton h-3 w-10" />
         </div>
       </div>
       <div className="skeleton h-9 rounded-xl mt-3" />
+      <style>{`
+        @keyframes fare-breathe {
+          0%,100% { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+          50%      { box-shadow: 0 4px 20px rgba(0,113,227,0.12); }
+        }
+        @keyframes fare-shimmer {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
     </div>
   )
 }
@@ -95,52 +95,46 @@ export default function ComparePage() {
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState('')
   const [sort, setSort]           = useState('cheapest')
-  const [showShare, setShare]     = useState(false)
-  const [reminded, setReminded]   = useState(false)
-  const [countdown, setCountdown] = useState(60)
+  const [showShare, setShare]         = useState(false)
+  const [reminded, setReminded]       = useState(false)
+  const [countdown, setCountdown]     = useState(60)
   const [lastRefresh, setLastRefresh] = useState(null)
+  const [showHeatmap, setShowHeatmap] = useState(false)
+  const [dropToast, setDropToast]     = useState(null) // { provider, oldFare, newFare }
+  const prevFaresRef                  = useRef({})     // provider → fare_min
   const countdownRef = useRef(60)
 
   const prediction = useFarePrediction()
   const ripple     = useRipple()
-  const { phone, autoNotify, openWhatsApp } = useWhatsApp()
-  const [waBannerDismissed, setWaBannerDismissed] = useState(false)
-  const [waSending, setWaSending]   = useState(false)
-  const [waSentMsg, setWaSentMsg]   = useState('')
-
-  const sendViaBackend = async (resultsArr) => {
-    setWaSending(true); setWaSentMsg('')
-    try {
-      await notifyApi.sendRideUpdate(
-        route?.pickupAddress || '',
-        route?.destinationAddress || '',
-        resultsArr,
-        route,
-      )
-      setWaSentMsg('✅ Sent to your WhatsApp!')
-    } catch (e) {
-      const err = e.response?.data?.detail || 'Send failed'
-      // fall back to deep-link if backend fails
-      openWhatsApp(buildWhatsAppMessage(route, resultsArr))
-      setWaSentMsg(`⚠️ ${err} — opened WhatsApp instead`)
-    } finally {
-      setWaSending(false)
-      setTimeout(() => setWaSentMsg(''), 4000)
-    }
-  }
-
-  const fetchRides = () => {
+  const fetchRides = (isRefresh = false) => {
+    if (!activeRoute) return
     setLoading(true); setError('')
-    ridesApi.compare(route)
-      .then(d => { setData(d); setLastRefresh(new Date()) })
+    ridesApi.compare(activeRoute)
+      .then(d => {
+        setData(d); setLastRefresh(new Date())
+        if (isRefresh) {
+          // detect price drops since last fetch
+          d.results.forEach(r => {
+            const prev = prevFaresRef.current[r.provider]
+            if (prev && r.fare_min < prev * 0.92) {
+              setDropToast({ provider: r.provider_display_name, oldFare: prev, newFare: r.fare_min })
+            }
+          })
+        }
+        const map = {}
+        d.results.forEach(r => { map[r.provider] = r.fare_min })
+        prevFaresRef.current = map
+      })
       .catch(err => setError(err.response?.data?.detail || 'Failed to fetch rides'))
       .finally(() => setLoading(false))
   }
 
+  const [activeRoute, setActiveRoute] = useState(route || null)
+
   useEffect(() => {
-    if (!route) { navigate('/home'); return }
+    if (!activeRoute) return
     fetchRides()
-  }, [])
+  }, [activeRoute])
 
   // Auto-refresh every 60 s
   useEffect(() => {
@@ -153,7 +147,7 @@ export default function ComparePage() {
       if (countdownRef.current <= 0) {
         countdownRef.current = 60
         setCountdown(60)
-        fetchRides()
+        fetchRides(true)
       }
     }, 1000)
     return () => clearInterval(timer)
@@ -165,13 +159,6 @@ export default function ComparePage() {
       )
     : []
 
-  // Auto-send WhatsApp when results first load and auto-notify is on
-  const autoSentRef = useRef(false)
-  useEffect(() => {
-    if (!data || !phone || !autoNotify || autoSentRef.current || sorted.length === 0) return
-    autoSentRef.current = true
-    sendViaBackend(sorted)
-  }, [data, phone, autoNotify])
 
   // Offer detection: no surge + savings >= 20% vs most expensive = special deal
   const offerAlert = (() => {
@@ -221,6 +208,31 @@ export default function ComparePage() {
     countdownRef.current = 60
     setCountdown(60)
     fetchRides()
+  }
+
+  // Show search form when navigated directly (no route in state)
+  if (!activeRoute) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 bg-bg/95 backdrop-blur border-b border-border z-20 px-4 py-3 flex items-center gap-2">
+          <button onClick={() => navigate(-1)} className="p-1.5 rounded-lg hover:bg-surface">
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="text-base font-semibold flex-1">Compare Rides</h1>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center p-6">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+               style={{ background: 'rgba(0,113,227,0.1)' }}>
+            <Search size={26} style={{ color: 'var(--primary)' }} />
+          </div>
+          <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Find the best fare</h2>
+          <p className="text-sm mb-8" style={{ color: 'var(--text-secondary)' }}>Enter your pickup and destination to compare all providers</p>
+          <div className="w-full max-w-md card">
+            <RouteSelector onSearch={r => { setActiveRoute(r); setLoading(true) }} />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -332,9 +344,44 @@ export default function ComparePage() {
           </div>
         )}
 
+        {/* Surge radar */}
+        {!loading && sorted.some(r => r.is_surging) && (
+          <SurgeRadar providerName={sorted.filter(r => r.is_surging).map(r => r.provider_display_name).join(', ')} />
+        )}
+
+        {/* Price heatmap toggle */}
+        {!loading && sorted.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <button
+              onClick={() => setShowHeatmap(v => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: showHeatmap ? 'rgba(0,113,227,0.08)' : 'rgba(0,0,0,0.04)',
+                border: `1px solid ${showHeatmap ? 'rgba(0,113,227,0.25)' : 'rgba(0,0,0,0.08)'}`,
+                borderRadius: 980, padding: '6px 14px',
+                fontSize: 12, fontWeight: 600,
+                color: showHeatmap ? '#0071E3' : '#6E6E73',
+                cursor: 'pointer',
+              }}
+            >
+              📊 {showHeatmap ? 'Hide heatmap' : 'Best time to ride'}
+            </button>
+            {showHeatmap && (
+              <div style={{
+                marginTop: 10, padding: 14,
+                background: '#fff', borderRadius: 18,
+                border: '1px solid rgba(0,0,0,0.08)',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+              }}>
+                <PriceHeatmap basefare={sorted[0]?.fare_min || 180} />
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Results */}
         {loading ? (
-          <>{[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}</>
+          <>{[1, 2, 3, 4].map(i => <PulseCard key={i} index={i} />)}</>
         ) : error ? (
           <div className="text-center py-12">
             <p className="text-4xl mb-4">😕</p>
@@ -389,57 +436,20 @@ export default function ComparePage() {
           </div>
         )}
 
-        {/* WhatsApp send button */}
-        {sorted.length > 0 && !loading && (
-          <div className="mt-3 space-y-2">
-            <div className="flex gap-2">
-              <button
-                onClick={(e) => { ripple(e); phone ? sendViaBackend(sorted) : openWhatsApp(buildWhatsAppMessage(route, sorted)) }}
-                disabled={waSending}
-                className="ripple-btn flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl border font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-60"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(37,211,102,0.15) 0%, rgba(18,140,67,0.08) 100%)',
-                  borderColor: 'rgba(37,211,102,0.4)',
-                  color: '#25D366',
-                }}
-                onMouseEnter={e => { if (!waSending) { e.currentTarget.style.boxShadow = '0 6px 20px rgba(37,211,102,0.2)'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
-                onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}
-              >
-                {waSending
-                  ? <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="30 60" /></svg> Sending…</>
-                  : <><MessageCircle size={17} /> {phone ? 'Send to my WhatsApp' : 'Share on WhatsApp'}</>
-                }
-              </button>
-              {/* Always-available deep-link fallback */}
-              <button
-                onClick={(e) => { ripple(e); openWhatsApp(buildWhatsAppMessage(route, sorted)) }}
-                className="ripple-btn px-3.5 rounded-2xl border text-sm transition-all active:scale-95"
-                style={{ borderColor: 'rgba(37,211,102,0.3)', color: '#25D366', background: 'rgba(37,211,102,0.06)' }}
-                title="Open in WhatsApp"
-              >
-                <Share2 size={16} />
-              </button>
-            </div>
-
-            {/* Status message */}
-            {waSentMsg && (
-              <p className="text-center text-xs font-medium" style={{ color: waSentMsg.startsWith('✅') ? '#25D366' : '#F59E0B' }}>
-                {waSentMsg}
-              </p>
-            )}
-
-            {/* Nudge to save number */}
-            {!phone && (
-              <p className="text-center text-xs text-muted">
-                💡 <button onClick={() => navigate('/profile')} className="text-green-400 underline underline-offset-2">Add your number in Profile</button> to receive messages directly on WhatsApp
-              </p>
-            )}
-          </div>
-        )}
       </div>
 
       {showShare && (
         <ShareSheet route={route} results={sorted} onClose={() => setShare(false)} />
+      )}
+
+      {dropToast && (
+        <PriceDropToast
+          provider={dropToast.provider}
+          oldFare={dropToast.oldFare}
+          newFare={dropToast.newFare}
+          onDismiss={() => setDropToast(null)}
+          onBook={() => setDropToast(null)}
+        />
       )}
     </div>
   )

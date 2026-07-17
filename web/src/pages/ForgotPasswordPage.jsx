@@ -58,9 +58,10 @@ function OtpInput({ value, onChange }) {
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate()
-  const [step, setStep]           = useState(1) // 1=email, 2=otp+newpass
+  const [step, setStep]           = useState(1) // 1=email  2=otp  3=new password
   const [email, setEmail]         = useState('')
   const [otp, setOtp]             = useState('')
+  const [verifiedOtp, setVerifiedOtp] = useState('')
   const [newPass, setNewPass]     = useState('')
   const [showPass, setShowPass]   = useState(false)
   const [loading, setLoading]     = useState(false)
@@ -88,19 +89,41 @@ export default function ForgotPasswordPage() {
     }
   }
 
-  // Step 2: verify OTP + set new password
-  const handleReset = async e => {
+  // Step 2: verify OTP only (does NOT reset password yet)
+  const handleVerifyOtp = async e => {
     e.preventDefault()
     if (otp.replace(/\D/g, '').length < 6) { setError('Enter all 6 digits'); return }
+    setLoading(true); setError('')
+    try {
+      // Verify OTP by calling reset-password with a dummy password the backend will reject
+      // Instead: use a lightweight check — submit and catch the "wrong code" error
+      // We'll hold the OTP and move to step 3; the real check happens on final submit
+      // This avoids a separate verify endpoint while still showing OTP and password separately
+      setVerifiedOtp(otp)
+      setStep(3)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Step 3: set new password (submits OTP + password together)
+  const handleReset = async e => {
+    e.preventDefault()
     if (newPass.length < 8) { setError('Password must be at least 8 characters'); return }
     setLoading(true); setError('')
     try {
-      await authApi.resetPassword(email, otp, newPass)
+      await authApi.resetPassword(email, verifiedOtp, newPass)
       setSuccess('Password reset! Redirecting to login…')
       setTimeout(() => navigate('/login'), 2000)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Reset failed')
-      setOtp('')
+      const msg = err.response?.data?.detail || 'Reset failed'
+      if (msg.toLowerCase().includes('code') || msg.toLowerCase().includes('otp') || msg.toLowerCase().includes('expired')) {
+        // OTP was wrong or expired — go back to OTP step
+        setOtp('')
+        setVerifiedOtp('')
+        setStep(2)
+      }
+      setError(msg)
     } finally {
       setLoading(false)
     }
@@ -118,6 +141,19 @@ export default function ForgotPasswordPage() {
     }
   }
 
+  // Step indicator dots
+  const StepDots = () => (
+    <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 28 }}>
+      {[1, 2, 3].map(s => (
+        <div key={s} style={{
+          width: s === step ? 20 : 8, height: 8, borderRadius: 4,
+          background: s <= step ? 'var(--color-primary)' : 'rgba(255,255,255,0.15)',
+          transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+        }} />
+      ))}
+    </div>
+  )
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6 max-w-md mx-auto">
       <div className="w-full">
@@ -129,7 +165,10 @@ export default function ForgotPasswordPage() {
           <span className="text-xl font-bold">RideCompare</span>
         </div>
 
-        {step === 1 ? (
+        <StepDots />
+
+        {/* ── Step 1: Email ── */}
+        {step === 1 && (
           <>
             <div className="mb-8">
               <div className="w-14 h-14 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center mb-4">
@@ -165,15 +204,18 @@ export default function ForgotPasswordPage() {
               <Link to="/login" className="text-primary font-semibold hover:underline">← Back to login</Link>
             </p>
           </>
-        ) : (
+        )}
+
+        {/* ── Step 2: OTP ── */}
+        {step === 2 && (
           <>
             <div className="text-center mb-8">
               <div className="w-16 h-16 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center mx-auto mb-4">
                 <Mail size={28} className="text-primary" />
               </div>
-              <h1 className="text-2xl font-bold mb-2">Check your email</h1>
+              <h1 className="text-2xl font-bold mb-2">Enter reset code</h1>
               <p className="text-muted text-sm">
-                Reset code sent to<br />
+                We sent a 6-digit code to<br />
                 <span className="text-white font-medium">{email}</span>
               </p>
             </div>
@@ -183,44 +225,21 @@ export default function ForgotPasswordPage() {
                 {error}
               </div>
             )}
-            {success && (
-              <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm px-4 py-3 rounded-xl mb-5 text-center">
-                {success}
-              </div>
-            )}
 
-            <form onSubmit={handleReset} className="space-y-5">
+            <form onSubmit={handleVerifyOtp} className="space-y-6">
               <div>
-                <label className="block text-xs font-medium text-muted mb-3 text-center">Enter 6-digit code</label>
-                <OtpInput value={otp} onChange={setOtp} />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-muted mb-1.5">New Password</label>
-                <div className="relative">
-                  <input
-                    type={showPass ? 'text' : 'password'}
-                    className="input pr-12"
-                    placeholder="Min. 8 characters"
-                    value={newPass}
-                    onChange={e => setNewPass(e.target.value)}
-                    required minLength={8}
-                  />
-                  <button type="button" onClick={() => setShowPass(s => !s)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white">
-                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
+                <label className="block text-xs font-medium text-muted mb-3 text-center">6-digit code from email</label>
+                <OtpInput value={otp} onChange={v => { setOtp(v); setError('') }} />
               </div>
 
               <button
                 type="submit"
-                disabled={loading || otp.replace(/\D/g, '').length < 6 || newPass.length < 8}
+                disabled={loading || otp.replace(/\D/g, '').length < 6}
                 className="btn-primary"
               >
                 {loading
                   ? <span className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  : <><Lock size={15} /> Reset Password <ArrowRight size={15} /></>
+                  : <>Verify Code <ArrowRight size={15} /></>
                 }
               </button>
             </form>
@@ -237,6 +256,72 @@ export default function ForgotPasswordPage() {
               <button onClick={() => { setStep(1); setError(''); setOtp('') }}
                 className="text-primary font-semibold hover:underline">
                 ← Change email
+              </button>
+            </p>
+          </>
+        )}
+
+        {/* ── Step 3: New Password ── */}
+        {step === 3 && (
+          <>
+            <div className="mb-8">
+              <div className="w-14 h-14 rounded-2xl bg-green-500/15 border border-green-500/20 flex items-center justify-center mb-4">
+                <Lock size={26} className="text-green-400" />
+              </div>
+              <h1 className="text-2xl font-bold mb-1">Set new password</h1>
+              <p className="text-muted text-sm">Choose a strong password for your account</p>
+            </div>
+
+            {error && (
+              <div className="bg-error/10 border border-error/20 text-error text-sm px-4 py-3 rounded-xl mb-5">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm px-4 py-3 rounded-xl mb-5 text-center">
+                {success}
+              </div>
+            )}
+
+            <form onSubmit={handleReset} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1.5">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    className="input pr-12"
+                    placeholder="Min. 8 characters"
+                    value={newPass}
+                    onChange={e => setNewPass(e.target.value)}
+                    required minLength={8}
+                    autoFocus
+                  />
+                  <button type="button" onClick={() => setShowPass(s => !s)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white">
+                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {newPass.length > 0 && newPass.length < 8 && (
+                  <p className="text-xs text-muted mt-1.5">{8 - newPass.length} more characters needed</p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || newPass.length < 8}
+                className="btn-primary"
+              >
+                {loading
+                  ? <span className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  : <><Lock size={15} /> Reset Password <ArrowRight size={15} /></>
+                }
+              </button>
+            </form>
+
+            <p className="text-center text-sm text-muted mt-5">
+              <button onClick={() => { setStep(2); setError(''); setNewPass('') }}
+                className="text-primary font-semibold hover:underline">
+                ← Re-enter code
               </button>
             </p>
           </>

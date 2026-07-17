@@ -71,10 +71,12 @@ class Settings(BaseSettings):
     RAPIDO_API_KEY: Optional[str] = None
     NAMMA_YATRI_API_KEY: Optional[str] = None
 
-    # Twilio WhatsApp
-    TWILIO_ACCOUNT_SID: Optional[str] = None
-    TWILIO_AUTH_TOKEN: Optional[str] = None
-    TWILIO_WHATSAPP_FROM: str = "whatsapp:+14155238886"  # Twilio sandbox default
+    # UltraMsg — free WhatsApp for any number (ultramsg.com)
+    ULTRAMSG_INSTANCE_ID: Optional[str] = None
+    ULTRAMSG_TOKEN: Optional[str] = None
+
+    # Bland AI — free AI voice calls for any number (bland.ai, 10 min/month free)
+    BLAND_AI_API_KEY: Optional[str] = None
 
     # Email / SMTP
     SMTP_HOST: str = ""

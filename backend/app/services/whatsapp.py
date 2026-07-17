@@ -1,4 +1,5 @@
 import logging
+import httpx
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,6 @@ def _cat_emoji(category_display: str) -> str:
 
 
 def _format_for_whatsapp(route: dict, results: list) -> str:
-    """Build a WhatsApp message — each option has its own direct booking link."""
     cheapest = results[0] if results else None
     best_val = next((r for r in results if 'best_value' in (r.get('badges') or [])), None)
     if best_val and best_val is cheapest:
@@ -69,7 +69,6 @@ def _format_for_whatsapp(route: dict, results: list) -> str:
             cat_part = f" {cat}" if cat else ""
             lines.append(f"{i}. {emoji} *{r['provider']}{cat_part}* — {r['fare']} ({r['eta']} min){surge}")
 
-        # One booking link per unique provider (deduped) — keeps message short
         seen: set = set()
         book_lines = []
         for r in results:
@@ -92,34 +91,28 @@ def _format_for_whatsapp(route: dict, results: list) -> str:
 
 
 def send_whatsapp(to_number: str, message: str) -> dict:
-    """
-    Send a WhatsApp message via Twilio.
-    Returns {"ok": True, "sid": "..."} or {"ok": False, "error": "..."}.
-    """
-    if not settings.TWILIO_ACCOUNT_SID or not settings.TWILIO_AUTH_TOKEN:
-        logger.warning("Twilio not configured — TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN missing")
-        return {"ok": False, "error": "Twilio credentials not configured"}
+    """Send a WhatsApp message via UltraMsg (free, any number). Returns {ok, sid/error}."""
+    if not settings.ULTRAMSG_INSTANCE_ID or not settings.ULTRAMSG_TOKEN:
+        return {"ok": False, "error": "UltraMsg not configured"}
+
+    digits = "".join(c for c in to_number if c.isdigit())
+    if not digits.startswith("91"):
+        digits = f"91{digits[-10:]}"
+    wa_to = f"{digits}@c.us"
 
     try:
-        from twilio.rest import Client
-        client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-
-        # Normalise number: strip non-digits then add +
-        digits = "".join(c for c in to_number if c.isdigit())
-        if not digits.startswith("91") and len(digits) == 10:
-            digits = f"91{digits}"
-        wa_to = f"whatsapp:+{digits}"
-
-        msg = client.messages.create(
-            body=message,
-            from_=settings.TWILIO_WHATSAPP_FROM,
-            to=wa_to,
+        r = httpx.post(
+            f"https://api.ultramsg.com/{settings.ULTRAMSG_INSTANCE_ID}/messages/chat",
+            data={"token": settings.ULTRAMSG_TOKEN, "to": wa_to, "body": message, "priority": 10},
+            timeout=10,
         )
-        logger.info(f"WhatsApp sent to {wa_to}: {msg.sid}")
-        return {"ok": True, "sid": msg.sid}
-
+        data = r.json()
+        if data.get("sent") == "true" or data.get("id"):
+            logger.info(f"WhatsApp sent to +{digits}")
+            return {"ok": True}
+        return {"ok": False, "error": str(data)}
     except Exception as exc:
-        logger.error(f"Twilio send failed: {exc}")
+        logger.error(f"UltraMsg error: {exc}")
         return {"ok": False, "error": str(exc)}
 
 

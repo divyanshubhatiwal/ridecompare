@@ -2,7 +2,8 @@ import { useState, useRef, useCallback } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { authApi } from '../api/auth'
-import { Eye, EyeOff, ArrowRight, Mail, RefreshCw } from 'lucide-react'
+import { notifyApi } from '../api/notify'
+import { Eye, EyeOff, ArrowRight, Mail, RefreshCw, MessageCircle } from 'lucide-react'
 
 // ── OTP input — 6 auto-advancing boxes ──────────────────────────────────────
 function OtpInput({ value, onChange }) {
@@ -100,6 +101,11 @@ export default function RegisterPage() {
   const [otp, setOtp] = useState('')
   const [resendCooldown, setResendCooldown] = useState(0)
 
+  // Step 3 state
+  const [waPhone, setWaPhone] = useState('')
+  const [waSaving, setWaSaving] = useState(false)
+  const [waActivated, setWaActivated] = useState(false)
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -132,7 +138,7 @@ export default function RegisterPage() {
     setLoading(true); setError('')
     try {
       await verifyEmail(pendingEmail, otp.trim())
-      navigate('/home')
+      setStep(3)
     } catch (err) {
       setError(err.response?.data?.detail || 'Verification failed')
       setOtp('')
@@ -162,6 +168,16 @@ export default function RegisterPage() {
     } catch (err) {
       setError(err.response?.data?.detail || 'Could not resend OTP')
     }
+  }
+
+  // ── Step 3: WhatsApp activation ─────────────────────────────────────────
+  const handleActivateWhatsApp = async () => {
+    if (waPhone.length === 10 && !waSaving) {
+      setWaSaving(true)
+      try { await notifyApi.saveNumber(waPhone) } catch { /* ignore */ } finally { setWaSaving(false) }
+    }
+    setWaActivated(true)
+    window.open(`https://wa.me/14155238886?text=join%20break-sweet`, '_blank')
   }
 
   // ── UI ───────────────────────────────────────────────────────────────────
@@ -299,6 +315,68 @@ export default function RegisterPage() {
               >
                 ← Back to sign up
               </button>
+            </p>
+          </>
+        )}
+
+        {step === 3 && (
+          <>
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                   style={{ background: 'rgba(37,211,102,0.12)', border: '1px solid rgba(37,211,102,0.3)' }}>
+                <MessageCircle size={28} style={{ color: '#25D366' }} />
+              </div>
+              <h1 className="text-2xl font-bold mb-2">Get WhatsApp updates</h1>
+              <p className="text-muted text-sm">
+                Receive instant fare alerts on WhatsApp — cheapest ride, surge warnings &amp; more.
+              </p>
+            </div>
+
+            {/* Phone input */}
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-muted mb-1.5">Your WhatsApp number</label>
+              <div className="flex gap-2">
+                <div className="flex items-center px-3 rounded-xl border border-border bg-surface text-sm text-muted shrink-0">
+                  🇮🇳 +91
+                </div>
+                <input
+                  type="tel"
+                  className="input flex-1"
+                  placeholder="98765 43210"
+                  value={waPhone}
+                  onChange={e => setWaPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  maxLength={10}
+                />
+              </div>
+            </div>
+
+            {/* Activate button */}
+            <button
+              onClick={handleActivateWhatsApp}
+              disabled={waPhone.length !== 10}
+              className="btn-primary mb-3 disabled:opacity-50"
+              style={{ background: '#25D366', borderColor: '#25D366' }}
+            >
+              <MessageCircle size={16} />
+              {waActivated ? 'Sent! Tap Done below →' : 'Activate WhatsApp'}
+            </button>
+
+            {waActivated && (
+              <div className="rounded-xl px-3 py-2.5 text-xs mb-4"
+                   style={{ background: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.25)', color: '#25D366' }}>
+                WhatsApp opened — just tap <strong>Send</strong> on the pre-filled message and you're done.
+              </div>
+            )}
+
+            <button
+              onClick={() => navigate('/home')}
+              className="w-full py-3 rounded-xl text-sm font-semibold text-muted hover:text-white transition-colors border border-border"
+            >
+              {waActivated ? 'Done — Go to app' : 'Skip for now'}
+            </button>
+
+            <p className="text-center text-xs text-muted mt-4">
+              You can always enable this later from Profile → WhatsApp Notifications
             </p>
           </>
         )}
