@@ -60,7 +60,6 @@ services:
   # ── Frontend (static site) ────────────────────────────────────────
   - type: web
     name: ridecompare-web
-    plan: free
     runtime: static
     rootDir: web
     buildCommand: npm install && npm run build
