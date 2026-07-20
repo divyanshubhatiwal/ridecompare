@@ -25,7 +25,7 @@ class UserRepository:
             hashed_password=get_password_hash(password) if password else None,
             google_id=google_id,
             avatar_url=avatar_url,
-            is_verified=bool(google_id),
+            is_verified=True,
         )
         self.db.add(user)
         self.db.commit()
