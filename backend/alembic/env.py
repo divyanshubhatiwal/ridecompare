@@ -13,6 +13,15 @@ config = context.config
 fileConfig(config.config_file_name)
 target_metadata = Base.metadata
 
+# Override alembic.ini URL with DATABASE_URL env var when set (e.g. on Render/Supabase)
+_db_url = os.environ.get("DATABASE_URL")
+if _db_url:
+    if _db_url.startswith("postgres://"):
+        _db_url = _db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif _db_url.startswith("postgresql://") and "+psycopg2" not in _db_url:
+        _db_url = _db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    config.set_main_option("sqlalchemy.url", _db_url)
+
 
 def run_migrations_offline():
     url = config.get_main_option("sqlalchemy.url")
