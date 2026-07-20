@@ -52,9 +52,11 @@ def send_otp_email(to_email: str, name: str, otp: str) -> bool:
     Send verification OTP email.
     In dev (no SMTP configured) just logs the OTP — no crash.
     """
+    # Always log OTP so it can be found in server logs if email fails
+    logger.warning(f"[OTP] {to_email} → {otp}")
+
     if not settings.SMTP_HOST or not settings.SMTP_USER or not settings.SMTP_PASS:
-        logger.warning(f"[DEV] Email OTP for {to_email}: {otp}  (configure SMTP to send real emails)")
-        return True  # Treat as success in dev
+        return True
 
     try:
         msg = MIMEMultipart("alternative")
