@@ -17,11 +17,15 @@ _fakeredis_instance = None
 
 def get_redis_client() -> redis.Redis:
     global _fakeredis_instance
-    if os.getenv("DEV_SQLITE", "0") == "1":
+    # Use in-memory fakeredis when no real Redis is configured
+    redis_url = os.getenv("REDIS_URL") or os.getenv("UPSTASH_REDIS_REST_URL")
+    if os.getenv("DEV_SQLITE", "0") == "1" or not redis_url and settings.REDIS_HOST == "localhost":
         if _fakeredis_instance is None:
             import fakeredis
             _fakeredis_instance = fakeredis.FakeRedis(decode_responses=True)
         return _fakeredis_instance
+    if redis_url:
+        return redis.from_url(redis_url, decode_responses=True)
     return redis.Redis(
         host=settings.REDIS_HOST,
         port=settings.REDIS_PORT,
