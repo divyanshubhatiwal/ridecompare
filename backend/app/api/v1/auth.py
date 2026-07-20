@@ -158,17 +158,6 @@ def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Account deactivated")
 
-    if not user.is_verified:
-        # Resend OTP and ask them to verify
-        redis = get_redis_client()
-        otp   = generate_otp()
-        _save_otp(redis, body.email, otp)
-        send_otp_email(body.email, user.full_name.split()[0], otp)
-        raise HTTPException(
-            status_code=403,
-            detail="EMAIL_NOT_VERIFIED",
-        )
-
     tokens = _token_response(user.id)
     _store_refresh_token(db, user.id, tokens.refresh_token, request)
     return tokens
