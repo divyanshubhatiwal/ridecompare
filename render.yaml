@@ -1,5 +1,6 @@
+# Only the backend lives on Render; the frontend is deployed on Vercel.
+# Render's "ride-compare" Blueprint maps this name to the live service ridecompare-api-3lw5 — don't rename it.
 services:
-  # ── Backend API ───────────────────────────────────────────────────
   - type: web
     name: ridecompare-api
     plan: free
@@ -36,20 +37,3 @@ services:
         sync: false
       - key: BLAND_AI_API_KEY
         sync: false
-
-  # ── Frontend (static site) ────────────────────────────────────────
-  - type: web
-    name: ridecompare-web
-    runtime: static
-    rootDir: web
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    envVars:
-      - key: VITE_API_URL
-        value: https://ridecompare-api.onrender.com/api/v1
-      - key: VITE_OPENCAGE_KEY
-        sync: false
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
