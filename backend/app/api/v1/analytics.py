@@ -1,7 +1,7 @@
 """
 Analytics endpoint — per-user fare stats, savings, gamification, best-time-to-book.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -13,6 +13,11 @@ from app.db.repositories.ride_repository import RideRepository
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
 
+def _utc(dt: datetime) -> datetime:
+    # Postgres returns aware datetimes, SQLite naive ones
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
+
+
 @router.get("/summary")
 def get_analytics_summary(
     current_user: User = Depends(get_current_active_user),
@@ -20,6 +25,7 @@ def get_analytics_summary(
 ):
     repo = RideRepository(db)
     searches = repo.get_user_history(current_user.id, limit=500)
+    when = {s.id: _utc(s.searched_at) for s in searches}
 
     total_searches = len(searches)
 
@@ -29,7 +35,7 @@ def get_analytics_summary(
     provider_appearances:  dict[str, int] = {}
     monthly_spend  = 0.0
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     monthly_searches = 0
 
@@ -57,7 +63,7 @@ def get_analytics_summary(
         provider_wins[p] = provider_wins.get(p, 0) + 1
 
         # Monthly stats
-        if hasattr(s, 'searched_at') and s.searched_at >= month_start:
+        if when[s.id] >= month_start:
             monthly_searches += 1
             monthly_spend += min_f
 
@@ -69,15 +75,12 @@ def get_analytics_summary(
     cutoff = now - timedelta(days=7)
     daily: dict[str, list] = {}
     for s in searches:
-        if s.searched_at < cutoff:
+        if when[s.id] < cutoff:
             continue
         available = [r for r in s.results if r.is_available and r.fare_min]
         if not available:
             continue
-        try:
-            day = s.searched_at.strftime("%d %b")
-        except Exception:
-            day = str(s.searched_at)[:10]
+        day = when[s.id].strftime("%d %b")
         daily.setdefault(day, []).append(min(r.fare_min for r in available))
 
     chart_data = [
@@ -91,7 +94,7 @@ def get_analytics_summary(
         available = [r for r in s.results if r.is_available and r.fare_min]
         if not available:
             continue
-        h = s.searched_at.hour
+        h = when[s.id].hour
         hourly.setdefault(h, []).append(min(r.fare_min for r in available))
 
     best_hours = sorted(
@@ -101,7 +104,7 @@ def get_analytics_summary(
     )[:3]
 
     # ── Streak — consecutive days with at least 1 search ──
-    search_days = sorted({s.searched_at.date() for s in searches}, reverse=True)
+    search_days = sorted({t.date() for t in when.values()}, reverse=True)
     streak = 0
     if search_days:
         today = now.date()
