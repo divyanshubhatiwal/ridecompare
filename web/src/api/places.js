@@ -5,7 +5,6 @@ import axios from 'axios'
 async function photonAutocomplete(query) {
   const resp = await axios.get('https://photon.komoot.io/api/', {
     params: { q: query, limit: 6, lang: 'en' },
-    headers: { 'User-Agent': 'RideCompare/1.0' },
     timeout: 8000,
   })
   const features = resp.data.features || []

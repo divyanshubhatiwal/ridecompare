@@ -26,6 +26,13 @@
   --text-primary:   #1D1D1F;
   --text-secondary: #6E6E73;
   --hero-bg:        #F5F5F7;
+  --primary-rgb:    0 113 227;
+  --glass:          rgba(255,255,255,0.72);
+  --glass-border:   rgba(255,255,255,0.6);
+  --tint:           rgba(0,0,0,0.04);
+  --mesh-1:         rgba(0,113,227,0.22);
+  --mesh-2:         rgba(124,58,237,0.16);
+  --mesh-3:         rgba(16,185,129,0.16);
 }
 
 [data-theme="dark"] {
@@ -45,7 +52,14 @@
   --frosted-menu:   rgba(28,28,30,0.97);
   --text-primary:   #F5F5F7;
   --text-secondary: #8E8E93;
-  --hero-bg:        #1C1C1E;
+  --hero-bg:        #0B0B0F;
+  --primary-rgb:    10 132 255;
+  --glass:          rgba(28,28,30,0.62);
+  --glass-border:   rgba(255,255,255,0.08);
+  --tint:           rgba(255,255,255,0.06);
+  --mesh-1:         rgba(10,132,255,0.30);
+  --mesh-2:         rgba(139,92,246,0.24);
+  --mesh-3:         rgba(16,185,129,0.18);
 }
 
 /* ══════════════════════════════════════════
@@ -151,7 +165,7 @@
 
   /* ── Card ── */
   .card {
-    background: var(--c-card);
+    background: rgb(var(--c-card));
     border-radius: var(--radius);
     padding: 16px;
     border: 1px solid rgba(0,0,0,0.08);
@@ -262,4 +276,126 @@
   .stat-label { @apply text-xs text-muted font-medium uppercase tracking-wide; }
 
   .num-pop { animation: num-pop .4s ease; }
+
+  /* ── Theme-aware text ── */
+  .t-primary   { color: var(--text-primary); }
+  .t-secondary { color: var(--text-secondary); }
+
+  /* ── Glass panel ── */
+  .glass {
+    background: var(--glass);
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* ── Animated gradient mesh ── */
+  .mesh { position: relative; isolation: isolate; }
+  .mesh-layer {
+    position: absolute; inset: 0; z-index: -1;
+    overflow: hidden; pointer-events: none;
+    border-radius: inherit;
+  }
+  .mesh-layer::before {
+    content: '';
+    position: absolute; inset: -40%;
+    background:
+      radial-gradient(35% 35% at 20% 25%, var(--mesh-1), transparent 70%),
+      radial-gradient(30% 30% at 80% 70%, var(--mesh-2), transparent 70%),
+      radial-gradient(25% 25% at 60% 15%, var(--mesh-3), transparent 70%);
+    filter: blur(40px);
+    animation: mesh-drift 18s ease-in-out infinite alternate;
+  }
+  .mesh-layer::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgb(var(--c-border) / .55) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--c-border) / .55) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse at 50% 0%, #000 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 20%, transparent 70%);
+  }
+  .mesh-layer.no-grid::after { display: none; }
+
+  /* ── Animated gradient border ── */
+  .gradient-ring {
+    position: relative;
+    border-radius: 22px;
+    background:
+      linear-gradient(rgb(var(--c-card)), rgb(var(--c-card))) padding-box,
+      conic-gradient(from var(--ring-angle, 0deg), #0071E3, #8B5CF6, #10B981, #0071E3) border-box;
+    border: 1.5px solid transparent;
+    animation: ring-spin 6s linear infinite;
+  }
+
+  /* ── Segmented control ── */
+  .segmented {
+    position: relative;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    padding: 4px;
+    border-radius: 14px;
+    background: var(--tint);
+  }
+  .segmented-thumb {
+    position: absolute; top: 4px; bottom: 4px; left: 4px;
+    border-radius: 10px;
+    background: rgb(var(--c-card));
+    box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.06);
+    transition: transform .35s cubic-bezier(.34,1.3,.64,1);
+  }
+  .segmented button {
+    position: relative; z-index: 1;
+    padding: 8px 10px;
+    font-size: 13px; font-weight: 600;
+    color: var(--text-secondary);
+    transition: color .2s;
+  }
+  .segmented button[aria-pressed="true"] { color: var(--text-primary); }
+
+  /* ── Chip ── */
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+    border: 1px solid rgb(var(--c-border));
+    background: rgb(var(--c-card));
+    color: var(--text-secondary);
+    transition: all .2s ease;
+    white-space: nowrap;
+  }
+  .chip:hover { color: var(--text-primary); border-color: rgb(var(--primary-rgb) / .4); }
+  .chip[aria-pressed="true"] {
+    color: var(--primary);
+    border-color: rgb(var(--primary-rgb) / .5);
+    background: rgb(var(--primary-rgb) / .08);
+  }
+
+  /* ── Live dot ── */
+  .live-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: #10B981; }
+  .live-dot::after {
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    background: #10B981; animation: live-ping 1.6s cubic-bezier(0,0,.2,1) infinite;
+  }
+
+  .fade-up { animation: fade-up .5s cubic-bezier(.2,.8,.2,1) both; }
+}
+
+@property --ring-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@keyframes ring-spin  { to { --ring-angle: 360deg; } }
+@keyframes mesh-drift {
+  0%   { transform: translate(0,0) scale(1); }
+  50%  { transform: translate(6vmax, 4vmax) scale(1.1); }
+  100% { transform: translate(-4vmax, 6vmax) scale(.95); }
+}
+@keyframes live-ping { 75%, 100% { transform: scale(2.4); opacity: 0; } }
+@keyframes bar-grow  { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes dash-flow { to { stroke-dashoffset: -24; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
