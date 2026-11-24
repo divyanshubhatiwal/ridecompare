@@ -1,6 +1,9 @@
 ﻿import { useState, useEffect, useRef, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, RotateCcw, Share2, Bell, BellOff, X, Search, Clock, TrendingDown, Sparkles, Route as RouteIcon, ExternalLink, BarChart3 } from 'lucide-react'
+import { ArrowLeft, RotateCcw, Share2, Bell, BellOff, X, Search, Clock, TrendingDown, Sparkles, Route as RouteIcon, ExternalLink, BarChart3, MessageCircle } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { notifyApi } from '../api/notify'
+import { useWhatsAppAuto, apiError } from '../hooks/useWhatsAppUpdates'
 import RouteSelector from '../components/RouteSelector'
 import { ridesApi } from '../api/rides'
 import ProviderCard from '../components/ProviderCard'
@@ -195,6 +198,18 @@ export default function ComparePage() {
   const [focusKey, setFocusKey]       = useState(null)
   const prevFaresRef = useRef({})
   const cardRefs     = useRef({})
+  const { user }     = useAuth()
+  const [waAuto]     = useWhatsAppAuto()
+  const [waStatus, setWaStatus] = useState(null) // { state: 'sending'|'sent'|'error', msg }
+
+  const sendToWhatsApp = (d) => {
+    if (!user?.phone_number || !d?.results?.length || !activeRoute) return
+    setWaStatus({ state: 'sending' })
+    const top = [...d.results].sort((a, b) => a.fare_min - b.fare_min).slice(0, 6)
+    notifyApi.sendRideUpdate(activeRoute.pickupAddress, activeRoute.destinationAddress, top, activeRoute)
+      .then(() => setWaStatus({ state: 'sent' }))
+      .catch(err => setWaStatus({ state: 'error', msg: apiError(err, 'WhatsApp update failed') }))
+  }
 
   const prediction = farePrediction()
 
@@ -216,6 +231,7 @@ export default function ComparePage() {
         const map = {}
         d.results.forEach(r => { map[r.provider] = r.fare_min })
         prevFaresRef.current = map
+        if (!isRefresh && waAuto) sendToWhatsApp(d)
       })
       .catch(err => setError(err.response?.data?.detail || 'Could not fetch fares. Please try again.'))
       .finally(() => setLoading(false))
@@ -346,6 +362,11 @@ export default function ComparePage() {
                 title={reminded ? 'Reminder set for 20 min' : 'Remind me in 20 min'}>
                 {reminded ? <Bell size={16} /> : <BellOff size={16} />}
               </IconButton>
+              {user?.phone_number && (
+                <IconButton onClick={() => sendToWhatsApp(data)} title="Send to my WhatsApp" active={waStatus?.state === 'sent'}>
+                  <MessageCircle size={16} />
+                </IconButton>
+              )}
               <IconButton onClick={() => setShare(true)} title="Share results"><Share2 size={16} /></IconButton>
             </>
           )}
@@ -365,6 +386,24 @@ export default function ComparePage() {
             <span className="t-secondary">{prediction.tip}</span>
           </p>
         </div>
+
+        {waStatus && (
+          <div className="mb-4 px-4 py-3 rounded-2xl flex items-center gap-2 text-[13px]"
+            style={{
+              background: waStatus.state === 'error' ? 'rgba(239,68,68,.1)' : 'rgba(37,211,102,.1)',
+              color: waStatus.state === 'error' ? '#EF4444' : '#1DA851',
+            }}>
+            <MessageCircle size={14} className="shrink-0" />
+            <span className="flex-1">
+              {waStatus.state === 'sending' ? 'Sending fares to your WhatsApp…'
+                : waStatus.state === 'sent' ? `Fares sent to WhatsApp (+${user?.phone_number})`
+                : `WhatsApp: ${waStatus.msg}`}
+            </span>
+            {waStatus.state !== 'sending' && (
+              <button onClick={() => setWaStatus(null)} aria-label="Dismiss"><X size={14} /></button>
+            )}
+          </div>
+        )}
 
         {reminded && (
           <div className="mb-4 px-4 py-3 rounded-2xl flex items-center gap-2 text-[13px]"

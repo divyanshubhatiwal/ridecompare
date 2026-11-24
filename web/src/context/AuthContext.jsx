@@ -60,8 +60,10 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  const refreshUser = async () => setUser(await authApi.getMe())
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, verifyEmail, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, verifyEmail, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

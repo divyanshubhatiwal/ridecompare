@@ -6,6 +6,7 @@ import {
   Check, ChevronDown, ChevronUp, Mail, Phone, Linkedin, Camera,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import WhatsAppSettings from '../components/WhatsAppSettings'
 
 function SettingRow({ icon: Icon, label, onClick, right, badge }) {
   return (
@@ -123,7 +124,10 @@ export default function ProfilePage() {
         </div>
 
         {/* Settings */}
-        <p className="text-xs font-semibold text-muted tracking-widest mb-3">SETTINGS</p>
+        <p className="text-xs font-semibold text-muted tracking-widest mb-3">NOTIFICATIONS</p>
+        <WhatsAppSettings />
+
+        <p className="text-xs font-semibold text-muted tracking-widest mb-3 mt-6">SETTINGS</p>
         <SettingRow icon={Settings} label="Ride Preferences" onClick={() => navigate('/preferences')} />
         <SettingRow icon={MapPin}   label="Saved Places"     onClick={() => navigate('/places')} />
         <SettingRow icon={Bell}     label="Price Alerts"     onClick={() => navigate('/alerts')} />

@@ -84,7 +84,7 @@ function OtpInput({ value, onChange }) {
 
 // ── Main page ────────────────────────────────────────────────────────────────
 export default function RegisterPage() {
-  const { register, verifyEmail } = useAuth()
+  const { register, verifyEmail, refreshUser } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -172,12 +172,19 @@ export default function RegisterPage() {
 
   // ── Step 3: WhatsApp activation ─────────────────────────────────────────
   const handleActivateWhatsApp = async () => {
-    if (waPhone.length === 10 && !waSaving) {
-      setWaSaving(true)
-      try { await notifyApi.saveNumber(waPhone) } catch { /* ignore */ } finally { setWaSaving(false) }
+    if (waPhone.length !== 10 || waSaving) return
+    setWaSaving(true); setError('')
+    try {
+      await notifyApi.saveNumber(waPhone)
+      await refreshUser()
+      await notifyApi.sendTest()
+      setWaActivated(true)
+    } catch (err) {
+      const d = err.response?.data?.detail
+      setError(typeof d === 'string' ? d : 'Could not send a WhatsApp message to that number.')
+    } finally {
+      setWaSaving(false)
     }
-    setWaActivated(true)
-    window.open(`https://wa.me/14155238886?text=join%20break-sweet`, '_blank')
   }
 
   // ── UI ───────────────────────────────────────────────────────────────────
@@ -353,18 +360,24 @@ export default function RegisterPage() {
             {/* Activate button */}
             <button
               onClick={handleActivateWhatsApp}
-              disabled={waPhone.length !== 10}
+              disabled={waPhone.length !== 10 || waSaving || waActivated}
               className="btn-primary mb-3 disabled:opacity-50"
               style={{ background: '#25D366', borderColor: '#25D366' }}
             >
               <MessageCircle size={16} />
-              {waActivated ? 'Sent! Tap Done below →' : 'Activate WhatsApp'}
+              {waSaving ? 'Sending test message…' : waActivated ? 'WhatsApp activated' : 'Activate WhatsApp'}
             </button>
+
+            {error && (
+              <div className="bg-error/10 border border-error/20 text-error text-xs px-3 py-2.5 rounded-xl mb-4">
+                {error}
+              </div>
+            )}
 
             {waActivated && (
               <div className="rounded-xl px-3 py-2.5 text-xs mb-4"
-                   style={{ background: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.25)', color: '#25D366' }}>
-                WhatsApp opened — just tap <strong>Send</strong> on the pre-filled message and you're done.
+                   style={{ background: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.25)', color: '#1DA851' }}>
+                We sent you a test message on WhatsApp. Fare updates will arrive there after each search.
               </div>
             )}
 
