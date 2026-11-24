@@ -120,7 +120,7 @@ export default function RegisterPage() {
         setStep(2)
         startResendCooldown()
       } else {
-        navigate('/home')
+        setStep(3)
       }
     } catch (err) {
       setError(err.response?.data?.detail || 'Registration failed')
@@ -261,7 +261,7 @@ export default function RegisterPage() {
               <Link to="/login" className="text-primary font-semibold hover:underline">Sign In</Link>
             </p>
           </>
-        ) : (
+        ) : step === 2 && (
           <>
             {/* OTP Step */}
             <div className="text-center mb-8">

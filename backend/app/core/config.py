@@ -93,6 +93,9 @@ class Settings(BaseSettings):
     SMTP_PASS: str = ""
     SMTP_TLS:  bool = True
     EMAIL_FROM_NAME: str = "RideCompare"
+    # Brevo HTTPS email API — used instead of SMTP when set (Render free blocks SMTP ports)
+    BREVO_API_KEY: str = ""
+    EMAIL_FROM_ADDRESS: str = ""
 
     # Rate limiting
     RATE_LIMIT_PER_MINUTE: int = 60

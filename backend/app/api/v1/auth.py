@@ -17,7 +17,7 @@ from app.schemas.auth import (
     RegisterRequest, LoginRequest, RefreshRequest,
     TokenResponse, UserResponse
 )
-from app.services.email import send_otp_email, generate_otp
+from app.services.email import send_otp_email, send_reset_email, generate_otp
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -64,10 +64,9 @@ def _delete_otp(redis, email: str):
 
 # ── schemas ────────────────────────────────────────────────────────────────
 
-class RegisterResponse(BaseModel):
-    message: str
+class RegisterResponse(TokenResponse):
     email: str
-    requires_verification: bool = True
+    requires_verification: bool = False
 
 
 class VerifyEmailRequest(BaseModel):
@@ -87,21 +86,11 @@ def register(body: RegisterRequest, request: Request, db: Session = Depends(get_
     if repo.get_by_email(body.email):
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Create unverified user
     user = repo.create(email=body.email, full_name=body.full_name, password=body.password)
 
-    # Generate + store OTP
-    redis = get_redis_client()
-    otp   = generate_otp()
-    _save_otp(redis, body.email, otp)
-
-    # Send email (logs OTP in dev when SMTP not configured)
-    send_otp_email(body.email, body.full_name.split()[0], otp)
-
-    return RegisterResponse(
-        message="Verification code sent to your email",
-        email=body.email,
-    )
+    tokens = _token_response(user.id)
+    _store_refresh_token(db, user.id, tokens.refresh_token, request)
+    return RegisterResponse(**tokens.model_dump(), email=user.email)
 
 
 @router.post("/verify-email", response_model=TokenResponse)
@@ -214,7 +203,7 @@ def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)):
     redis = get_redis_client()
     otp   = generate_otp()
     redis.setex(f"{RESET_PREFIX}{body.email.lower()}", OTP_TTL, otp)
-    _send_reset_email(body.email, user.full_name.split()[0], otp)
+    send_reset_email(body.email, user.full_name.split()[0], otp)
     return {"message": "If that email exists, a reset code was sent"}
 
 
@@ -241,57 +230,6 @@ def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
     user.hashed_password = get_password_hash(body.new_password)
     db.commit()
     return {"message": "Password reset successfully. You can now log in."}
-
-
-def _send_reset_email(to_email: str, name: str, otp: str) -> None:
-    from app.services.email import send_otp_email
-    import logging
-    logger = logging.getLogger(__name__)
-    if not __import__('app.core.config', fromlist=['settings']).settings.SMTP_HOST:
-        logger.warning(f"[DEV] Password reset OTP for {to_email}: {otp}")
-        return
-    # Reuse the OTP email but with reset subject
-    try:
-        import smtplib
-        from email.mime.multipart import MIMEMultipart
-        from email.mime.text import MIMEText
-        from app.core.config import settings
-        digits = "".join(
-            f'<span style="display:inline-block;width:44px;height:52px;line-height:52px;'
-            f'text-align:center;font-size:28px;font-weight:bold;color:#EF4444;'
-            f'background:#FEF2F2;border:2px solid #FECACA;border-radius:10px;margin:0 4px;">'
-            f'{d}</span>'
-            for d in otp
-        )
-        html = f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;">
-  <div style="max-width:480px;margin:40px auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-    <div style="background:linear-gradient(135deg,#EF4444,#DC2626);padding:28px 32px;">
-      <span style="font-size:28px;">🔑</span>
-      <span style="color:white;font-size:20px;font-weight:bold;margin-left:8px;">RideCompare</span>
-    </div>
-    <div style="padding:36px 32px;">
-      <h2 style="margin:0 0 8px;color:#111827;">Reset your password, {name} 🔐</h2>
-      <p style="color:#6B7280;margin:0 0 28px;">Enter this 6-digit code to reset your password:</p>
-      <div style="text-align:center;margin:0 0 28px;">{digits}</div>
-      <p style="color:#9CA3AF;font-size:13px;">Expires in <strong>10 minutes</strong>. If you didn't request this, ignore this email.</p>
-    </div>
-    <div style="background:#f9fafb;padding:16px 32px;text-align:center;">
-      <p style="color:#D1D5DB;font-size:12px;margin:0;">© 2026 RideCompare</p>
-    </div>
-  </div></body></html>"""
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"{otp} — RideCompare password reset code"
-        msg["From"]    = f"{settings.EMAIL_FROM_NAME} <{settings.SMTP_USER}>"
-        msg["To"]      = to_email
-        msg.attach(MIMEText(html, "html"))
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            server.ehlo()
-            if settings.SMTP_TLS:
-                server.starttls()
-            server.login(settings.SMTP_USER, settings.SMTP_PASS)
-            server.sendmail(settings.SMTP_USER, to_email, msg.as_string())
-    except Exception as exc:
-        __import__('logging').getLogger(__name__).error(f"Reset email failed: {exc}")
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

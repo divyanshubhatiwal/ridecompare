@@ -26,6 +26,10 @@ services:
         sync: false
       - key: SMTP_PASS
         sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: EMAIL_FROM_ADDRESS
+        sync: false
       - key: ULTRAMSG_INSTANCE_ID
         sync: false
       - key: ULTRAMSG_TOKEN
@@ -45,8 +49,6 @@ services:
         value: https://ridecompare-api.onrender.com/api/v1
       - key: VITE_OPENCAGE_KEY
         sync: false
-      - key: VITE_DEV_PIN
-        value: "9999"
     routes:
       - type: rewrite
         source: /*

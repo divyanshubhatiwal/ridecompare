@@ -32,9 +32,14 @@ export function AuthProvider({ children }) {
     return u
   }
 
-  // Step 1 of registration — returns { email, requires_verification: true }
   const register = async (email, fullName, password) => {
-    return await authApi.register(email, fullName, password)
+    const res = await authApi.register(email, fullName, password)
+    if (res.access_token) {
+      localStorage.setItem('access_token', res.access_token)
+      localStorage.setItem('refresh_token', res.refresh_token)
+      setUser(await authApi.getMe())
+    }
+    return res
   }
 
   // Step 2 — verifies OTP, sets tokens, loads user
