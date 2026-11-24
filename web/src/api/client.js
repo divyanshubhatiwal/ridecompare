@@ -8,15 +8,26 @@ const client = axios.create({
   timeout: 60000,
 })
 
+let inFlight = 0
+const listeners = new Set()
+const emit = () => listeners.forEach(fn => fn(inFlight))
+export function onRequestsChange(fn) {
+  listeners.add(fn)
+  return () => listeners.delete(fn)
+}
+const done = () => { inFlight = Math.max(0, inFlight - 1); emit() }
+
 client.interceptors.request.use(config => {
   const token = localStorage.getItem('access_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
+  inFlight += 1; emit()
   return config
 })
 
 client.interceptors.response.use(
-  res => res,
+  res => { done(); return res },
   async err => {
+    done()
     const original = err.config
     if (err.response?.status === 401 && !original._retry) {
       original._retry = true

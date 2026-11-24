@@ -316,7 +316,7 @@ export default function ComparePage() {
 
   if (!activeRoute) {
     return (
-      <div className="mesh min-h-screen flex flex-col" style={{ background: 'var(--hero-bg)' }}>
+      <div className="mesh min-h-screen flex flex-col page-enter" style={{ background: 'var(--hero-bg)' }}>
         <div className="mesh-layer" />
         <div className="px-4 py-3 flex items-center gap-2">
           <IconButton onClick={() => navigate(-1)} title="Back"><ArrowLeft size={18} /></IconButton>
@@ -338,7 +338,7 @@ export default function ComparePage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-screen bg-bg page-enter">
       {/* Header */}
       <header className="sticky top-0 z-30 glass" style={{ borderRadius: 0, borderInline: 0, borderTop: 0, boxShadow: 'none' }}>
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-2">

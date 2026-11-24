@@ -106,7 +106,10 @@
    BASE
 ══════════════════════════════════════════ */
 @layer base {
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
+  button, a, [role="button"] { touch-action: manipulation; }
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 8px; }
 
   body {
     @apply bg-bg font-sans;
@@ -383,7 +386,63 @@
   }
 
   .fade-up { animation: fade-up .5s cubic-bezier(.2,.8,.2,1) both; }
+
+  /* ── Page enter ── */
+  .page-enter { animation: page-in .42s cubic-bezier(.2,.8,.2,1) both; }
+
+  /* ── Scroll reveal ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(22px) scale(.985);
+    transition: opacity .7s cubic-bezier(.2,.8,.2,1), transform .7s cubic-bezier(.2,.8,.2,1);
+    transition-delay: var(--reveal-delay, 0s);
+    will-change: opacity, transform;
+  }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* ── Press feedback ── */
+  .pressable { transition: transform .18s cubic-bezier(.2,.8,.2,1); }
+  .pressable:active { transform: scale(.96); }
+
+  /* ── Sliding nav indicator ── */
+  .nav-indicator {
+    position: absolute;
+    transition: transform .45s cubic-bezier(.34,1.25,.64,1), width .45s cubic-bezier(.34,1.25,.64,1), opacity .2s;
+    pointer-events: none;
+  }
+
+  /* ── Top progress bar ── */
+  .top-progress {
+    position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 100000;
+    pointer-events: none; overflow: hidden;
+  }
+  .top-progress > span {
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, #0A84FF, #8B5CF6, #10B981);
+    transform-origin: left;
+    animation: progress-crawl 8s cubic-bezier(.1,.7,.2,1) forwards;
+    box-shadow: 0 0 10px rgb(var(--primary-rgb) / .6);
+  }
+  .top-progress.done > span { animation: progress-finish .35s ease-out forwards; }
 }
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes progress-crawl {
+  0%   { transform: scaleX(0); }
+  20%  { transform: scaleX(.45); }
+  60%  { transform: scaleX(.75); }
+  100% { transform: scaleX(.92); }
+}
+@keyframes progress-finish {
+  0%   { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+
+/* Circular theme switch (View Transitions API) */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 
 @property --ring-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
 @keyframes ring-spin  { to { --ring-angle: 360deg; } }

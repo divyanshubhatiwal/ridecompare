@@ -1,4 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useLayoutEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import TopProgress from './components/TopProgress'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -25,11 +27,19 @@ import ExplorePage from './pages/ExplorePage'
 import FeatureDemoPage from './pages/FeatureDemoPage'
 import SafetyPage from './pages/SafetyPage'
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useLayoutEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }) }, [pathname])
+  return null
+}
+
 export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
+          <ScrollToTop />
+          <TopProgress />
           <OfflineBanner />
           <ToastContainer />
           <InstallPrompt />

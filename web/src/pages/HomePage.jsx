@@ -1,9 +1,10 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Zap, TrendingDown, Bell, Shield, ChevronRight, BarChart2, BookmarkPlus, Calculator, Map, Clock, ArrowRight, MapPin } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import RouteSelector from '../components/RouteSelector'
 import AnimatedCounter from '../components/AnimatedCounter'
+import Reveal from '../components/Reveal'
 import { ridesApi } from '../api/rides'
 import { analyticsApi } from '../api/analytics'
 import { useSavingsStreak } from '../hooks/useSavingsStreak'
@@ -123,19 +124,19 @@ export default function HomePage() {
 
         {/* ══ STATS ══ */}
         <div className="grid grid-cols-3 gap-3">
-          {stats.map(s => (
-            <div key={s.label} className="card text-center py-5">
+          {stats.map((s, i) => (
+            <Reveal key={s.label} delay={i * 0.08} className="card text-center py-5">
               <p className="font-bold tabular-nums" style={{ fontSize: 'clamp(1.3rem,3.5vw,1.8rem)', letterSpacing: '-0.04em', color: s.color }}>
                 <AnimatedCounter value={s.value} prefix={s.prefix} />
               </p>
               <p className="text-[12px] mt-1 t-secondary">{s.label}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
 
         {/* ══ RECENT ══ */}
         {recent.length > 0 && (
-          <section>
+          <Reveal as="section">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-[18px] t-primary">Jump back in</h2>
               <button onClick={() => navigate('/history')}
@@ -169,11 +170,11 @@ export default function HomePage() {
                 </button>
               ))}
             </div>
-          </section>
+          </Reveal>
         )}
 
         {/* ══ BENTO ══ */}
-        <section>
+        <Reveal as="section">
           <h2 className="font-bold text-[18px] mb-4 t-primary">Why RideCompare</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div className="card col-span-2 sm:row-span-2 p-6 flex flex-col justify-between overflow-hidden relative">
@@ -207,10 +208,10 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        </section>
+        </Reveal>
 
         {/* ══ QUICK ACTIONS ══ */}
-        <section>
+        <Reveal as="section">
           <h2 className="font-bold text-[18px] mb-4 t-primary">Quick access</h2>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {QUICK_ACTIONS.map(({ icon, label, route, color }) => (
@@ -221,10 +222,10 @@ export default function HomePage() {
               </button>
             ))}
           </div>
-        </section>
+        </Reveal>
 
         {/* ══ CTA ══ */}
-        <section className="mesh rounded-3xl p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5"
+        <Reveal as="section" className="mesh rounded-3xl p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5"
           style={{ background: '#0B0B0F' }}>
           <div className="mesh-layer no-grid" />
           <div>
@@ -240,7 +241,7 @@ export default function HomePage() {
             style={{ background: '#fff', color: '#0B0B0F' }}>
             Set alert <ArrowRight size={14} />
           </button>
-        </section>
+        </Reveal>
 
         <footer className="text-center pb-4">
           <p className="text-[12px] t-secondary">Built for India · Uber, Ola, Rapido & InDrive</p>
